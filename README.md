@@ -9,7 +9,7 @@ Future reads like plain English, runs on Node.js, and gives every program built-
 ## Quick start
 
 ```bash
-npm install future-lang
+npm install -g future-lang
 ```
 
 ```future
@@ -331,8 +331,49 @@ Open `future-playground.html` in any browser for a live editor with 11 built-in 
 ## CLI
 
 ```bash
+npm install -g future-lang
+
+future --version                    # show version
+future new myapp                    # create a new project
 future run program.future           # compile + run
-future compile program.future       # print generated JavaScript
+future compile program.future       # compile to JavaScript
+future check program.future         # syntax check only
+future fmt program.future           # format source in-place
+future playground                   # launch the interactive playground
+future doctor                       # check your environment
+```
+
+---
+
+## Import system
+
+Split code across files with `use`:
+
+```future
+# utils.future
+function formatName(name)
+    return "User: {name}"
+end
+```
+
+```future
+# main.future
+
+# import all functions by name
+use "./utils.future"
+print formatName("Alice")
+
+# import as a namespace
+use "./math.future" as m
+result = m.add(10, 20)
+print result
+```
+
+Compiles to standard ES module imports:
+
+```js
+import { formatName } from "./utils.js";
+import * as m from "./math.js";
 ```
 
 ---
@@ -365,6 +406,6 @@ Source (.future)  →  Lexer  →  Parser  →  Generator  →  JavaScript
 
 ## Documentation
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) — compiler pipeline, folder structure, AST node types
-- [ROADMAP.md](ROADMAP.md) — feature status and priorities
-- [MIGRATION.md](MIGRATION.md) — changelog, what changed between versions
+- [ARCHITECTURE.md](https://github.com/humolot/future-lang/blob/main/ARCHITECTURE.md) — compiler pipeline, folder structure, AST node types
+- [ROADMAP.md](https://github.com/humolot/future-lang/blob/main/ROADMAP.md) — feature status and priorities
+- [MIGRATION.md](https://github.com/humolot/future-lang/blob/main/MIGRATION.md) — changelog, what changed between versions
