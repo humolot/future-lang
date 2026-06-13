@@ -1,0 +1,403 @@
+// runtime/index.js
+// Aggregates every capability namespace into a single `runtime` object that the
+// generated JavaScript imports as `__rt`. Add a module here and it instantly
+// becomes callable from Future as `<name>.<method>(...)`.
+
+import * as ai       from './ai.js';
+import * as http     from './http.js';
+import * as mqtt     from './mqtt.js';
+import * as tts      from './tts.js';
+import * as rag      from './rag.js';
+import * as vision   from './vision.js';
+import * as home     from './home.js';
+// Optional modules — fully backward-compatible additions.
+import * as memory   from './memory.js';
+import * as schedule from './schedule.js';
+import * as system   from './system.js';
+import * as device   from './device.js';
+import * as math     from './math.js';
+import readline from 'node:readline';
+
+// Canonical ordered list of capability module names.
+const MODULE_NAMES = [
+  'ai', 'http', 'mqtt', 'tts', 'rag', 'vision', 'home',
+  'memory', 'schedule', 'system', 'device', 'math',
+];
+
+export const runtime = { ai, http, mqtt, tts, rag, vision, home, memory, schedule, system, device, math };
+
+// input(prompt) — reads a line from stdin (CLI programs).
+runtime.input = async (prompt = '') => {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => {
+    rl.question(String(prompt), (answer) => { rl.close(); resolve(answer); });
+  });
+};
+
+// --- Structured manifest ---
+// Each function entry carries enough metadata for docs, editor tooling, REPL, and AI agents.
+// Shape: { description, params: [{ name, type, optional? }], returns, async }
+
+export const manifest = {
+  ai: {
+    configure: {
+      description: 'Set the AI provider — accepts a named provider ("openai", "anthropic", "ollama", "gemini", …) or a custom OpenAI-compatible base URL',
+      params: [
+        { name: 'providerOrUrl', type: 'string' },
+        { name: 'apiKey',        type: 'string' },
+        { name: 'model',         type: 'string', optional: true },
+      ],
+      returns: 'void',
+      async: false,
+    },
+    ask: {
+      description: 'Ask an AI model a question and get a text response',
+      params: [{ name: 'prompt', type: 'string' }],
+      returns: 'string',
+      async: true,
+    },
+    chat: {
+      description: 'Send a multi-turn message list to an AI model',
+      params: [{ name: 'messages', type: 'array' }],
+      returns: 'string',
+      async: true,
+    },
+    stream: {
+      description: 'Stream a response chunk by chunk via a callback function',
+      params: [
+        { name: 'prompt',   type: 'string' },
+        { name: 'onChunk',  type: 'function' },
+      ],
+      returns: 'void',
+      async: true,
+    },
+    embed: {
+      description: 'Generate a vector embedding for a piece of text',
+      params: [{ name: 'text', type: 'string' }],
+      returns: 'array',
+      async: true,
+    },
+  },
+
+  http: {
+    get: {
+      description: 'Perform an HTTP GET request and return the parsed response',
+      params: [
+        { name: 'url', type: 'string' },
+        { name: 'headers', type: 'object', optional: true },
+      ],
+      returns: 'any',
+      async: true,
+    },
+    post: {
+      description: 'Perform an HTTP POST request with a JSON body',
+      params: [
+        { name: 'url', type: 'string' },
+        { name: 'body', type: 'any' },
+        { name: 'headers', type: 'object', optional: true },
+      ],
+      returns: 'any',
+      async: true,
+    },
+  },
+
+  mqtt: {
+    publish: {
+      description: 'Publish a message to an MQTT topic',
+      params: [
+        { name: 'topic', type: 'string' },
+        { name: 'message', type: 'string' },
+      ],
+      returns: 'string',
+      async: true,
+    },
+    subscribe: {
+      description: 'Subscribe to an MQTT topic; handler is called on every message',
+      params: [
+        { name: 'topic', type: 'string' },
+        { name: 'handler', type: 'function' },
+      ],
+      returns: 'string',
+      async: true,
+    },
+  },
+
+  tts: {
+    speak: {
+      description: 'Speak text aloud using the system text-to-speech engine',
+      params: [{ name: 'text', type: 'string' }],
+      returns: 'void',
+      async: true,
+    },
+  },
+
+  rag: {
+    index: {
+      description: 'Index documents into the default knowledge base (chunks, embeds, stores)',
+      params: [{ name: 'docs', type: 'array|string' }],
+      returns: 'object',
+      async: true,
+    },
+    query: {
+      description: 'Query the default knowledge base and get an LLM-generated answer',
+      params: [{ name: 'question', type: 'string' }],
+      returns: 'string',
+      async: true,
+    },
+    create: {
+      description: 'Create a named Knowledge Base with its own isolated vector store',
+      params: [
+        { name: 'name', type: 'string' },
+        { name: 'opts', type: 'object', optional: true },
+      ],
+      returns: 'KnowledgeBase',
+      async: false,
+    },
+    indexFile: {
+      description: 'Read a local file and index its content into the default knowledge base',
+      params: [{ name: 'filePath', type: 'string' }],
+      returns: 'object',
+      async: true,
+    },
+    indexUrl: {
+      description: 'Fetch a URL and index its text content into the default knowledge base',
+      params: [{ name: 'url', type: 'string' }],
+      returns: 'object',
+      async: true,
+    },
+    stats: {
+      description: 'Return stats for the default knowledge base (chunk count, vector count)',
+      params: [],
+      returns: 'object',
+      async: false,
+    },
+  },
+
+  vision: {
+    describe: {
+      description: 'Describe the contents of an image using a vision AI model',
+      params: [{ name: 'image', type: 'string' }],
+      returns: 'string',
+      async: true,
+    },
+    detect: {
+      description: 'Detect and list objects, people, or labels visible in an image',
+      params: [{ name: 'image', type: 'string' }],
+      returns: 'string',
+      async: true,
+    },
+    ocr: {
+      description: 'Extract all readable text from an image (OCR)',
+      params: [{ name: 'image', type: 'string' }],
+      returns: 'string',
+      async: true,
+    },
+    classify: {
+      description: 'Classify an image into a primary category',
+      params: [{ name: 'image', type: 'string' }],
+      returns: 'string',
+      async: true,
+    },
+    compare: {
+      description: 'Compare two images and describe their differences',
+      params: [
+        { name: 'imageA', type: 'string' },
+        { name: 'imageB', type: 'string' },
+      ],
+      returns: 'string',
+      async: true,
+    },
+  },
+
+  home: {
+    turnOn: {
+      description: 'Turn a home automation device on',
+      params: [{ name: 'device', type: 'string' }],
+      returns: 'string',
+      async: true,
+    },
+    turnOff: {
+      description: 'Turn a home automation device off',
+      params: [{ name: 'device', type: 'string' }],
+      returns: 'string',
+      async: true,
+    },
+    set: {
+      description: 'Set a home automation device to an arbitrary value',
+      params: [
+        { name: 'device', type: 'string' },
+        { name: 'value', type: 'any' },
+      ],
+      returns: 'string',
+      async: true,
+    },
+  },
+
+  memory: {
+    forget: {
+      description: 'Delete all keys matching a pattern, or clear everything if no pattern given',
+      params: [{ name: 'pattern', type: 'string|RegExp', optional: true }],
+      returns: 'number',
+      async: false,
+    },
+    set: {
+      description: 'Store a value in the in-process memory store',
+      params: [
+        { name: 'key', type: 'string' },
+        { name: 'value', type: 'any' },
+      ],
+      returns: 'any',
+      async: false,
+    },
+    get: {
+      description: 'Retrieve a value from the memory store',
+      params: [{ name: 'key', type: 'string' }],
+      returns: 'any',
+      async: false,
+    },
+    delete: {
+      description: 'Delete a key from the memory store',
+      params: [{ name: 'key', type: 'string' }],
+      returns: 'boolean',
+      async: false,
+    },
+    search: {
+      description: 'Search memory entries whose key or value contains the query string',
+      params: [{ name: 'query', type: 'string' }],
+      returns: 'array',
+      async: false,
+    },
+  },
+
+  schedule: {
+    every: {
+      description: 'Run a callback repeatedly at a fixed interval (e.g. "30m", "5s")',
+      params: [
+        { name: 'interval', type: 'string|number' },
+        { name: 'callback', type: 'function' },
+      ],
+      returns: 'Timeout',
+      async: true,
+    },
+    once: {
+      description: 'Run a callback once after a delay (e.g. "10s", 5000)',
+      params: [
+        { name: 'delay', type: 'string|number' },
+        { name: 'callback', type: 'function' },
+      ],
+      returns: 'any',
+      async: true,
+    },
+    cron: {
+      description: 'Run a callback on a cron schedule (requires node-cron)',
+      params: [
+        { name: 'expression', type: 'string' },
+        { name: 'callback', type: 'function' },
+      ],
+      returns: 'any',
+      async: true,
+    },
+  },
+
+  system: {
+    env: {
+      description: 'Read an environment variable; returns null if not set',
+      params: [{ name: 'name', type: 'string' }],
+      returns: 'string|null',
+      async: false,
+    },
+    exec: {
+      description: 'Execute a shell command and return its stdout',
+      params: [{ name: 'command', type: 'string|array' }],
+      returns: 'string',
+      async: true,
+    },
+    open: {
+      description: 'Open a file path or URL with the OS default application',
+      params: [{ name: 'target', type: 'string' }],
+      returns: 'string',
+      async: true,
+    },
+    notify: {
+      description: 'Send a desktop notification with a message',
+      params: [{ name: 'message', type: 'string' }],
+      returns: 'string',
+      async: true,
+    },
+    read: {
+      description: 'Read a file and return its content as a string',
+      params: [{ name: 'path', type: 'string' }],
+      returns: 'string',
+      async: true,
+    },
+    write: {
+      description: 'Write a string to a file (creates or overwrites)',
+      params: [
+        { name: 'path',    type: 'string' },
+        { name: 'content', type: 'string' },
+      ],
+      returns: 'string',
+      async: true,
+    },
+  },
+
+  device: {
+    register: {
+      description: 'Register an IoT device with a configuration object (name is required)',
+      params: [{ name: 'config', type: 'object' }],
+      returns: 'object',
+      async: false,
+    },
+    get: {
+      description: 'Look up a registered device by name',
+      params: [{ name: 'name', type: 'string' }],
+      returns: 'object|null',
+      async: false,
+    },
+    list: {
+      description: 'List all registered devices',
+      params: [],
+      returns: 'array',
+      async: false,
+    },
+  },
+
+  math: {
+    round:  { description: 'Round to nearest integer',        params: [{ name: 'x', type: 'number' }], returns: 'number', async: false },
+    floor:  { description: 'Round down to nearest integer',   params: [{ name: 'x', type: 'number' }], returns: 'number', async: false },
+    ceil:   { description: 'Round up to nearest integer',     params: [{ name: 'x', type: 'number' }], returns: 'number', async: false },
+    abs:    { description: 'Absolute value',                  params: [{ name: 'x', type: 'number' }], returns: 'number', async: false },
+    sqrt:   { description: 'Square root',                     params: [{ name: 'x', type: 'number' }], returns: 'number', async: false },
+    pow:    { description: 'x raised to the power y',         params: [{ name: 'x', type: 'number' }, { name: 'y', type: 'number' }], returns: 'number', async: false },
+    log:    { description: 'Natural logarithm',               params: [{ name: 'x', type: 'number' }], returns: 'number', async: false },
+    random: { description: 'Random float between 0 and 1',   params: [], returns: 'number', async: false },
+    min:    { description: 'Smallest of the given values',    params: [{ name: '...values', type: 'number' }], returns: 'number', async: false },
+    max:    { description: 'Largest of the given values',     params: [{ name: '...values', type: 'number' }], returns: 'number', async: false },
+    pi:     { description: 'The mathematical constant π',     params: [], returns: 'number', async: false },
+    e:      { description: "Euler's number",                  params: [], returns: 'number', async: false },
+  },
+};
+
+// --- Introspection API ---
+// These methods allow programs, REPLs, and AI agents to discover the runtime at run time.
+
+/** List all available module names. */
+runtime.listModules = () => [...MODULE_NAMES];
+
+/** List all function names exported by a module. */
+runtime.listFunctions = (mod) => {
+  const m = manifest[mod];
+  return m ? Object.keys(m) : [];
+};
+
+/**
+ * Full description of the runtime: version, module list, and complete manifest.
+ * Suitable for AI agent discovery or documentation generation.
+ */
+runtime.describe = () => ({
+  version: '0.2.0',
+  modules: [...MODULE_NAMES],
+  manifest,
+});
+
+export default runtime;

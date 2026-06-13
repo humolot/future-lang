@@ -1,0 +1,92 @@
+// runtime/ai.js — Public AI module for Future programs.
+//
+// Provider resolution is delegated to runtime/providers/index.js.
+// See that file for the full resolution order and supported providers.
+//
+// Quick-start:
+//   FUTURE_AI_PROVIDER=openai FUTURE_AI_API_KEY=sk-... future run my.future
+//   FUTURE_AI_PROVIDER=ollama FUTURE_AI_MODEL=llama3.2 future run my.future
+//   FUTURE_AI_PROVIDER=gemini FUTURE_AI_API_KEY=... future run my.future
+//
+// Or from Future code:
+//   ai.configure("https://api.venice.ai/api/v1", "my-key", "llama-3.3-70b")
+
+import { resolveProvider, setRuntimeConfig } from './providers/index.js';
+
+/**
+ * Configure the AI provider from Future code.
+ * Accepts either a baseUrl (OpenAI-compat) or a named provider.
+ *
+ * Examples:
+ *   ai.configure("https://api.venice.ai/api/v1", "key", "llama-3.3-70b")
+ *   ai.configure("openai", "sk-...", "gpt-4o")
+ *   ai.configure("anthropic", "sk-ant-...", "claude-sonnet-4-6")
+ */
+export function configure(baseUrlOrProvider, apiKey, model) {
+  const first = String(baseUrlOrProvider);
+  // If first arg looks like a URL, treat as OpenAI-compat baseUrl.
+  const isUrl = first.startsWith('http');
+  setRuntimeConfig({
+    provider:  isUrl ? 'openai-compat' : first,
+    baseUrl:   isUrl ? first : undefined,
+    apiKey:    String(apiKey),
+    model:     model ? String(model) : undefined,
+  });
+}
+
+/** Ask a single question. @returns {Promise<string>} */
+export async function ask(prompt) {
+  return chat([{ role: 'user', content: String(prompt) }]);
+}
+
+/** Multi-turn chat. messages = [{ role, content }, ...]. @returns {Promise<string>} */
+export async function chat(messages) {
+  const provider = resolveProvider();
+  if (!provider) return offlineStub(messages);
+  return provider.chat(messages);
+}
+
+/**
+ * Stream a response chunk-by-chunk.
+ * @param {string|Array} promptOrMessages
+ * @param {(chunk: string) => void} onChunk  Called with each text fragment.
+ * @returns {Promise<void>}
+ */
+export async function stream(promptOrMessages, onChunk) {
+  const messages = Array.isArray(promptOrMessages)
+    ? promptOrMessages
+    : [{ role: 'user', content: String(promptOrMessages) }];
+  const provider = resolveProvider();
+  if (!provider) { onChunk(offlineStub(messages)); return; }
+  return provider.stream(messages, onChunk);
+}
+
+/**
+ * Generate a vector embedding for a piece of text.
+ * With OpenAI/Ollama providers, returns real semantic embeddings.
+ * With Anthropic (no public embed API) or offline, returns keyword-based vectors.
+ * @param {string} text
+ * @returns {Promise<number[]>}
+ */
+export async function embed(text) {
+  const provider = resolveProvider();
+  if (!provider) {
+    const { keywordVector } = await import('./providers/util.js');
+    return keywordVector(String(text));
+  }
+  return provider.embed(text);
+}
+
+// --- helpers ---
+
+function offlineStub(messages) {
+  const preview = messages.map((m) => m.content).join(' ').slice(0, 80);
+  return (
+    '[ai offline] No provider configured.\n' +
+    '  Option A — env: FUTURE_AI_PROVIDER=openai  FUTURE_AI_API_KEY=sk-...\n' +
+    '             env: FUTURE_AI_PROVIDER=anthropic ANTHROPIC_API_KEY=sk-ant-...\n' +
+    '             env: FUTURE_AI_PROVIDER=ollama   (no key needed for local)\n' +
+    '  Option B — code: ai.configure("openai", "sk-...", "gpt-4o")\n' +
+    `  Prompt: ${preview}`
+  );
+}

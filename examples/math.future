@@ -1,0 +1,8 @@
+# Functions with return values and arithmetic
+function square(n)
+  return n * n
+end
+
+x = 5
+print "x squared is:"
+print square(x)

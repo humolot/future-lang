@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Future — mini app test</title>
+</head>
+<body>
+
+<h1>Future runtime test</h1>
+<pre id="out" style="background:#111;color:#0f0;padding:1rem;min-height:200px;white-space:pre-wrap"></pre>
+
+<!-- ── 1. Load the runtime ──────────────────────────────────────────────────── -->
+<script type="module" src="../future-browser.js"></script>
+
+<!-- ── 2. Configure: redirect print + set AI key ────────────────────────────── -->
+<script type="module">
+  import Future from '../future-browser.js';
+
+  const out = document.getElementById('out');
+  Future.runtime.print = (...args) => {
+    out.textContent += args.join(' ') + '\n';
+  };
+
+  // Uncomment to test AI (programs 10 and 11):
+  // Future.configure({ proxy: '/api/ai' });
+  // Future.configure({ provider: 'venice', apiKey: 'your-key-here' });
+  //
+  // Or set window.__env before this script and use system.env() from Future code:
+  window.__env = { VENICE_API_KEY: 'VENICE-INFERENCE-KEY-n9mnNP2DsEdj-M8osOKWgwpxou51VXtWlAlpasmdnl' }
+</script>
+
+<!-- ── Future programs ────────────────────────────────────────────────────────
+     Tip: string interpolation supports {variable} and {object.prop} only.
+     Function calls must be assigned to a variable first:
+       n = len(items)
+       print "Count: {n}"       ✓
+       print "Count: {len(items)}"  ✗ (stays as literal text)
+──────────────────────────────────────────────────────────────────────────── -->
+
+<!-- Program 1: variables, strings, lists, for -->
+<script type="future">
+print "=== 1. Basic ==="
+name = "Future"
+version = 0.3
+print "Language: {name} v{version}"
+
+items = ["alpha", "beta", "gamma", "delta"]
+n = len(items)
+print "List has {n} items:"
+for item in items
+  print "  - {item}"
+end
+</script>
+
+<!-- Program 2: math module -->
+<script type="future">
+print "=== 2. Math ==="
+a = math.round(3.7)
+b = math.floor(3.9)
+c = math.ceil(3.1)
+d = math.abs(-42)
+e = math.sqrt(144)
+f = math.pow(2, 10)
+g = math.max(3, 9, 1, 7)
+h = math.min(3, 9, 1, 7)
+r = math.random()
+print "round(3.7)       = {a}"
+print "floor(3.9)       = {b}"
+print "ceil(3.1)        = {c}"
+print "abs(-42)         = {d}"
+print "sqrt(144)        = {e}"
+print "pow(2,10)        = {f}"
+print "max(3,9,1,7)     = {g}"
+print "min(3,9,1,7)     = {h}"
+print "random()         = {r}"
+print "pi               = {math.pi}"
+print "e                = {math.e}"
+</script>
+
+<!-- Program 3: while loop + len — use for to sum (no bracket index in Future) -->
+<script type="future">
+print "=== 3. While + for accumulator ==="
+scores = [72, 85, 91, 60, 88, 95, 78]
+n = len(scores)
+
+# sum with for (Future has no array[i] index access yet)
+total = 0
+for s in scores
+  total = total + s
+end
+
+avg = math.round(total / n)
+best = math.max(72, 85, 91, 60, 88, 95, 78)
+worst = math.min(72, 85, 91, 60, 88, 95, 78)
+print "Count: {n}  Total: {total}  Avg: {avg}"
+print "Best:  {best}  Worst: {worst}"
+
+# while loop counting down
+i = 5
+print "Countdown:"
+while i > 0
+  print "  {i}"
+  i = i - 1
+end
+print "  go!"
+</script>
+
+<!-- Program 4: objects, null, conditionals -->
+<script type="future">
+print "=== 4. Objects + null ==="
+user = { name: "Alice"  age: 28  role: "admin" }
+print "Name: {user.name}  Age: {user.age}  Role: {user.role}"
+
+session = null
+if session == null
+  print "No active session"
+else
+  print "Session active"
+end
+
+if user.age >= 18
+  print "{user.name} is an adult"
+end
+
+# nested object access
+product = { name: "Widget"  price: 9.99 }
+total = product.price * 3
+rounded = math.round(total * 100) / 100
+print "3x {product.name} = {rounded}"
+</script>
+
+<!-- Program 5: functions -->
+<script type="future">
+print "=== 5. Functions ==="
+
+function greet(name)
+  return "Hello, {name}!"
+end
+
+function factorial(n)
+  if n <= 1
+    return 1
+  end
+  return n * factorial(n - 1)
+end
+
+function clamp(value, lo, hi)
+  if value < lo
+    return lo
+  end
+  if value > hi
+    return hi
+  end
+  return value
+end
+
+msg = greet("World")
+print msg
+
+f5 = factorial(5)
+f10 = factorial(10)
+print "5! = {f5}"
+print "10! = {f10}"
+
+c1 = clamp(150, 0, 100)
+c2 = clamp(-10, 0, 100)
+c3 = clamp(42,  0, 100)
+print "clamp(150, 0, 100) = {c1}"
+print "clamp(-10, 0, 100) = {c2}"
+print "clamp(42,  0, 100) = {c3}"
+</script>
+
+<!-- Program 6: memory module -->
+<script type="future">
+print "=== 6. Memory ==="
+memory.set("app", "FutureTest")
+memory.set("version", "0.3.2")
+memory.set("user", "Alice")
+memory.set("score", 99)
+
+app = memory.get("app")
+ver = memory.get("version")
+print "Running {app} v{ver}"
+
+results = memory.search("ver")
+n = len(results)
+print "Keys matching 'ver': {n}"
+
+memory.forget("user")
+gone = memory.get("user")
+if gone == null
+  print "user key deleted"
+end
+
+score = memory.get("score")
+print "score = {score}"
+</script>
+
+<!-- Program 7: try / catch + custom error-safe function -->
+<script type="future">
+print "=== 7. Error handling ==="
+
+function safeDivide(a, b)
+  if b == 0
+    return null
+  end
+  return a / b
+end
+
+r1 = safeDivide(10, 2)
+r2 = safeDivide(10, 0)
+print "10 / 2 = {r1}"
+print "10 / 0 = {r2}"
+
+try
+  bad = http.get("https://this-does-not-exist-xyz123.com/api")
+  print bad
+catch err
+  print "Caught expected error: request failed"
+end
+
+print "Execution continues after catch"
+</script>
+
+<!-- Program 8: HTTP (live fetch) -->
+<script type="future">
+print "=== 8. HTTP ==="
+todo = http.get("https://jsonplaceholder.typicode.com/todos/3")
+print "Title:     {todo.title}"
+print "Completed: {todo.completed}"
+
+user = http.get("https://jsonplaceholder.typicode.com/users/1")
+print "User:      {user.name}"
+print "Email:     {user.email}"
+print "City:      {user.address.city}"
+</script>
+
+<!-- Program 9: system.env -->
+<script type="future">
+print "=== 9. system.env ==="
+# In the browser, reads from window.__env
+# In Node.js CLI, reads from process.env
+key = system.env("VENICE_API_KEY")
+if key == null
+  print "VENICE_API_KEY not set"
+  print "Set window.__env = { VENICE_API_KEY: '...' } before loading the page"
+else
+  n = len(key)
+  print "VENICE_API_KEY is set ({n} chars)"
+end
+</script>
+
+<!-- Program 10: agent (no AI call — works without any key) -->
+<script type="future">
+print "=== 10. Agent (no AI) ==="
+
+agent greet
+  msg = "Hello from agent! Goal: {goal}"
+  return msg
+end
+
+agent measure
+  n = len(goal)
+  return "Input has {n} characters"
+end
+
+agent double
+  result = goal + " | " + goal
+  return result
+end
+
+r1 = greet("test the runtime")
+r2 = measure("Hello Future language!")
+r3 = double("ping")
+print r1
+print r2
+print r3
+</script>
+
+<!-- Program 11: AI (requires key or proxy — skips cleanly if not set) -->
+<script type="future">
+print "=== 11. AI ==="
+
+# To enable: configure in the <script type="module"> block above
+key = system.env("VENICE_API_KEY")
+if key == null
+  print "AI skipped — no key configured"
+  print "Set window.__env.VENICE_API_KEY or Future.configure({ proxy: '/api/ai' })"
+else
+  ai.configure("venice", key)
+  try
+    answer = ai.ask("Reply with exactly three words: Future is awesome")
+    print "AI says: {answer}"
+  catch err
+    print "AI error: {err}"
+  end
+end
+</script>
+
+</body>
+</html>

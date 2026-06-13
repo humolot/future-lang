@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Future — Browser Demo</title>
+  <style>
+    body { font-family: monospace; max-width: 700px; margin: 2rem auto; padding: 0 1rem; background: #0d1117; color: #e6edf3; }
+    h1   { color: #58a6ff; }
+    h2   { color: #8b949e; font-size: 0.9rem; font-weight: normal; margin-top: 2rem; }
+    pre  { background: #161b22; padding: 1rem; border-radius: 6px; border: 1px solid #30363d; overflow-x: auto; }
+    #output { background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+              padding: 1rem; min-height: 60px; white-space: pre-wrap; color: #3fb950; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+    .demo  { background: #2d1b00; color: #f0a500; }
+    .proxy { background: #0d2b00; color: #3fb950; }
+    code   { font-family: monospace; }
+  </style>
+</head>
+<body>
+
+<h1>Future Language — Browser Runtime</h1>
+
+<!-- Step 1: load the Future runtime -->
+<script type="module" src="../future-browser.js"></script>
+
+<!-- Step 2: configure (runs after future-browser.js, same module tick) -->
+<script type="module">
+  import Future from '../future-browser.js';
+
+  // ── Option A: Proxy mode (production — API key stays on your server) ────────
+  // Future.configure({ proxy: '/api/ai' })
+
+  // ── Option B: Demo mode (dev only — key visible in source) ──────────────────
+  // Future.configure({ provider: 'openai',     apiKey: 'sk-...' })
+  // Future.configure({ provider: 'anthropic',  apiKey: 'sk-ant-...' })
+  // Future.configure({ provider: 'ollama' })   // local, no key needed
+
+  // ── Redirect print output to the page ───────────────────────────────────────
+  const out = document.getElementById('output');
+  Future.runtime.print = (...args) => {
+    const line = args.join(' ');
+    console.log(line);
+    if (out) out.textContent += line + '\n';
+  };
+</script>
+
+<!-- ─── Example 1: Basic — no AI needed ──────────────────────────────────── -->
+<h2>Example 1 — Basic (no AI required)</h2>
+<pre><code>names = ["Alice", "Bob", "Carlos"]
+for name in names
+  print "Olá, {name}!"
+end
+
+user = { name: "João"  age: 30 }
+if user.age >= 18
+  print "{user.name} é adulto"
+end</code></pre>
+
+<script type="future">
+names = ["Alice", "Bob", "Carlos"]
+for name in names
+  print "Olá, {name}!"
+end
+
+user = { name: "João"  age: 30 }
+if user.age >= 18
+  print "{user.name} é adulto"
+end
+</script>
+
+<!-- ─── Example 2: Memory ─────────────────────────────────────────────────── -->
+<h2>Example 2 — Memory (no AI required)</h2>
+<pre><code>memory.set("visits", 1)
+count = memory.get("visits")
+print "Visitas: {count}"</code></pre>
+
+<script type="future">
+memory.set("visits", 1)
+count = memory.get("visits")
+print "Visitas: {count}"
+</script>
+
+<!-- ─── Example 3: AI ─────────────────────────────────────────────────────── -->
+<h2>Example 3 — AI <span class="badge demo">requires API key or proxy</span></h2>
+<pre><code>try
+  answer = ai.ask("What is 2 + 2? Reply with just the number.")
+  print "AI diz: {answer}"
+catch err
+  print "AI não configurada — adiciona uma key ou proxy"
+end</code></pre>
+
+<script type="future">
+try
+  answer = ai.ask("What is 2 + 2? Reply with just the number.")
+  print "AI diz: {answer}"
+catch err
+  print "AI não configurada — adiciona uma key ou proxy"
+end
+</script>
+
+<!-- ─── Example 4: Agent ──────────────────────────────────────────────────── -->
+<h2>Example 4 — Agent <span class="badge demo">requires API key or proxy</span></h2>
+<pre><code>agent tradutor
+  use ai
+  resultado = ai.ask("Traduz para português: {goal}")
+  return resultado
+end
+
+try
+  pt = tradutor("Good morning, how are you?")
+  print pt
+catch err
+  print "Agent precisa de AI — adiciona uma key ou proxy"
+end</code></pre>
+
+<script type="future">
+agent tradutor
+  use ai
+  resultado = ai.ask("Traduz para português: {goal}")
+  return resultado
+end
+
+try
+  pt = tradutor("Good morning, how are you?")
+  print pt
+catch err
+  print "Agent precisa de AI — adiciona uma key ou proxy"
+end
+</script>
+
+<!-- ─── Output ────────────────────────────────────────────────────────────── -->
+<h2>Output</h2>
+<div id="output"></div>
+
+<!-- ─── Proxy server example ──────────────────────────────────────────────── -->
+<h2>Proxy server example <span class="badge proxy">production</span></h2>
+<pre><code>// server.js — guarda a tua key no servidor, nunca no browser
+import express from 'express'
+import { runtime } from 'future-lang/runtime'
+
+const app = express()
+app.use(express.json())
+
+runtime.ai.configure('openai', process.env.OPENAI_KEY)
+
+app.post('/api/ai/ask',   async (req, res) => res.json({ text: await runtime.ai.ask(req.body.prompt) }))
+app.post('/api/ai/chat',  async (req, res) => res.json({ text: await runtime.ai.chat(req.body.messages) }))
+app.post('/api/ai/embed', async (req, res) => res.json({ embedding: await runtime.ai.embed(req.body.text) }))
+app.listen(3000)</code></pre>
+
+<pre><code>&lt;!-- HTML — a key nunca aparece aqui --&gt;
+&lt;script type="module" src="future-browser.js"&gt;&lt;/script&gt;
+&lt;script type="module"&gt;
+  import Future from './future-browser.js'
+  Future.configure({ proxy: '/api/ai' })
+&lt;/script&gt;
+
+&lt;script type="future"&gt;
+  answer = ai.ask("Olá!")
+  print answer
+&lt;/script&gt;</code></pre>
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Automação residencial sobre MQTT (loopback local, roda sem broker)
+function aoReceber(mensagem)
+  print "Sensor disse: " + mensagem
+end
+
+mqtt.subscribe("casa/sala/temperatura", aoReceber)
+mqtt.publish("casa/sala/temperatura", "23.5")
+
+home.turnOn("luz_sala")
+print "Luz da sala ligada."

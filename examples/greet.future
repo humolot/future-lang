@@ -1,0 +1,7 @@
+# Functions, string concatenation and calls
+function greet(name)
+  print "Hello, " + name
+end
+
+greet("John")
+greet("Ada")

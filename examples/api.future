@@ -1,0 +1,11 @@
+# Consumir dados de uma API pública (JSONPlaceholder)
+todo = http.get("https://jsonplaceholder.typicode.com/todos/1")
+
+print "Título da tarefa:"
+print todo.title
+
+if todo.completed == true
+  print "Status: concluída"
+else
+  print "Status: pendente"
+end

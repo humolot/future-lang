@@ -1,0 +1,35 @@
+{
+  "name": "future-lang",
+  "version": "0.3.0",
+  "description": "Future — a small programming language that transpiles to JavaScript, with a capability runtime (HTTP/AI/MQTT/TTS).",
+  "type": "module",
+  "bin": {
+    "future": "src/cli.js"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./runtime": "./runtime/index.js",
+    "./runtime/lsp-metadata": "./runtime/lsp-metadata.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "optionalDependencies": {
+    "mqtt": "^5.0.0",
+    "node-cron": "^3.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/humolot/future-lang.git"
+  },
+  "homepage": "https://github.com/humolot/future-lang#readme",
+  "bugs": {
+    "url": "https://github.com/humolot/future-lang/issues"
+  },
+  "keywords": ["language", "compiler", "transpiler", "future", "ai", "mqtt", "tts"],
+  "license": "MIT"
+}
