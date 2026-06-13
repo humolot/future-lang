@@ -21,7 +21,7 @@ import { compile, tokenize, parse } from './index.js';
 import { format } from './formatter.js';
 import { FutureError } from './errors.js';
 
-const VERSION = '0.3.0';
+const VERSION = '0.3.1';
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const RUNTIME_INDEX = join(PROJECT_ROOT, 'runtime', 'index.js');
 
