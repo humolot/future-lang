@@ -577,4 +577,7 @@ async function cmdDoctor() {
   return 0;
 }
 
-process.exit(await main(process.argv.slice(2)));
+const _exitCode = await main(process.argv.slice(2));
+// Only force-exit on error. Exit code 0 lets the event loop keep running
+// naturally — this allows server.listen() and on/every handlers to stay alive.
+if (_exitCode !== 0) process.exit(_exitCode);
