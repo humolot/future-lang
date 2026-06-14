@@ -1,0 +1,75 @@
+# AI HTTP Server — REST API backed by Venice AI
+#
+# Usage:
+#   future run examples/ai-server.future
+#
+# Endpoints:
+#   POST /ask          { "prompt": "..." }                        → { answer }
+#   POST /chat         { "messages": [...] }                      → { reply }
+#   POST /chat/simple  { "message": "..." }                       → { reply }
+#   GET  /models       list available Venice models
+#   GET  /health       server status
+
+# --- Configure Venice ---
+ai.configure("venice", "your-venice-api-key-here")
+
+# Optional: pick a specific model (default is Venice's default)
+# ai.configure("venice", "your-key", "llama-3.3-70b")
+
+# --- Routes ---
+
+server.post("/ask")
+  prompt = req.body.prompt
+  if prompt == null
+    return { error: "prompt is required" }
+  end
+  answer = ai.ask(prompt)
+  return { answer: answer }
+end
+
+server.post("/chat")
+  messages = req.body.messages
+  if messages == null
+    return { error: "messages is required" }
+  end
+  reply = ai.chat(messages)
+  return { reply: reply }
+end
+
+server.post("/chat/simple")
+  message = req.body.message
+  if message == null
+    return { error: "message is required" }
+  end
+  messages = [{ role: "user", content: message }]
+  reply = ai.chat(messages)
+  return { reply: reply }
+end
+
+server.post("/complete")
+  prompt = req.body.prompt
+  if prompt == null
+    return { error: "prompt is required" }
+  end
+  result = ai.complete(prompt)
+  return {
+    text: result.text,
+    model: result.model,
+    provider: result.provider,
+    tokens: result.tokens
+  }
+end
+
+server.get("/health")
+  return { status: "ok", provider: "venice", version: "1.0" }
+end
+
+# --- Start ---
+server.listen(3000)
+print "AI server running at http://localhost:3000"
+print ""
+print "Try it:"
+print "  curl -X POST http://localhost:3000/ask -H 'Content-Type: application/json' -d '{\"prompt\":\"What is the capital of France?\"}'"
+print "  curl -X POST http://localhost:3000/chat/simple -H 'Content-Type: application/json' -d '{\"message\":\"Hello!\"}'"
+print "  curl -X POST http://localhost:3000/complete -H 'Content-Type: application/json' -d '{\"prompt\":\"Explain recursion in one sentence.\"}'"
+print "  curl http://localhost:3000/health"
