@@ -1,0 +1,273 @@
+{
+  "If statement": {
+    "prefix": "if",
+    "body": [
+      "if ${1:condition}",
+      "\t$0",
+      "end"
+    ],
+    "description": "If statement"
+  },
+
+  "If / else": {
+    "prefix": "ife",
+    "body": [
+      "if ${1:condition}",
+      "\t${2:# true branch}",
+      "else",
+      "\t$0",
+      "end"
+    ],
+    "description": "If / else statement"
+  },
+
+  "If / else if / else": {
+    "prefix": "ifei",
+    "body": [
+      "if ${1:condition}",
+      "\t${2:# branch 1}",
+      "else if ${3:other_condition}",
+      "\t${4:# branch 2}",
+      "else",
+      "\t$0",
+      "end"
+    ],
+    "description": "If / else if / else chain"
+  },
+
+  "Function": {
+    "prefix": ["fn", "function"],
+    "body": [
+      "function ${1:name}(${2:params})",
+      "\t$0",
+      "end"
+    ],
+    "description": "Function declaration"
+  },
+
+  "For loop": {
+    "prefix": "for",
+    "body": [
+      "for ${1:item} in ${2:list}",
+      "\t$0",
+      "end"
+    ],
+    "description": "For-in loop"
+  },
+
+  "While loop": {
+    "prefix": "while",
+    "body": [
+      "while ${1:condition}",
+      "\t$0",
+      "end"
+    ],
+    "description": "While loop"
+  },
+
+  "Try / catch": {
+    "prefix": "try",
+    "body": [
+      "try",
+      "\t${1:# risky code}",
+      "catch ${2:err}",
+      "\t$0",
+      "end"
+    ],
+    "description": "Try / catch error handling"
+  },
+
+  "On event": {
+    "prefix": "on",
+    "body": [
+      "on ${1:mqtt} \"${2:topic/path}\"",
+      "\t$0",
+      "end"
+    ],
+    "description": "Subscribe to an event (mqtt, http webhook, etc.)"
+  },
+
+  "Every interval": {
+    "prefix": "every",
+    "body": [
+      "every \"${1:30m}\"",
+      "\t$0",
+      "end"
+    ],
+    "description": "Recurring task (cron-like)"
+  },
+
+  "Stream AI response": {
+    "prefix": "stream",
+    "body": [
+      "stream ai.ask(\"${1:prompt}\")",
+      "\tprint chunk",
+      "end"
+    ],
+    "description": "Stream AI response chunk by chunk"
+  },
+
+  "Agent": {
+    "prefix": "agent",
+    "body": [
+      "agent ${1:name}",
+      "\tuse ${2:ai}",
+      "\t$0",
+      "end"
+    ],
+    "description": "Agent declaration"
+  },
+
+  "Use import": {
+    "prefix": "use",
+    "body": [
+      "use \"${1:./utils.future}\""
+    ],
+    "description": "Import functions from a file"
+  },
+
+  "Use import as namespace": {
+    "prefix": "useas",
+    "body": [
+      "use \"${1:./utils.future}\" as ${2:utils}"
+    ],
+    "description": "Import file as a namespace alias"
+  },
+
+  "AI ask": {
+    "prefix": "ask",
+    "body": [
+      "${1:answer} = ai.ask(\"${2:prompt}\")"
+    ],
+    "description": "Ask AI a question (returns plain string)"
+  },
+
+  "AI complete": {
+    "prefix": "complete",
+    "body": [
+      "${1:result} = ai.complete(\"${2:prompt}\")",
+      "print ${1:result}.text"
+    ],
+    "description": "AI structured completion (returns { text, model, provider, tokens })"
+  },
+
+  "AI chat": {
+    "prefix": "chat",
+    "body": [
+      "${1:messages} = [{ role: \"user\", content: \"${2:hello}\" }]",
+      "${3:reply} = ai.chat(${1:messages})"
+    ],
+    "description": "Multi-turn AI chat"
+  },
+
+  "HTTP GET": {
+    "prefix": "httpget",
+    "body": [
+      "${1:data} = http.get(\"${2:https://api.example.com/path}\")"
+    ],
+    "description": "HTTP GET request"
+  },
+
+  "HTTP POST": {
+    "prefix": "httppost",
+    "body": [
+      "${1:result} = http.post(\"${2:https://api.example.com/path}\", {",
+      "\t${3:key}: \"${4:value}\"",
+      "})"
+    ],
+    "description": "HTTP POST request with body"
+  },
+
+  "HTTP configure": {
+    "prefix": "httpconf",
+    "body": [
+      "http.configure({",
+      "\theaders: { \"${1:Authorization}\": \"${2:Bearer token}\" },",
+      "\ttimeout: ${3:5000}",
+      "})"
+    ],
+    "description": "Configure global HTTP headers and timeout"
+  },
+
+  "Memory set": {
+    "prefix": "memset",
+    "body": [
+      "memory.set(\"${1:key}\", ${2:value})"
+    ],
+    "description": "Store a value in persistent memory"
+  },
+
+  "Memory get": {
+    "prefix": "memget",
+    "body": [
+      "${1:value} = memory.get(\"${2:key}\")"
+    ],
+    "description": "Retrieve a value from persistent memory"
+  },
+
+  "Print": {
+    "prefix": "print",
+    "body": [
+      "print \"${1:message}\""
+    ],
+    "description": "Print a value to output"
+  },
+
+  "Print interpolated": {
+    "prefix": "printi",
+    "body": [
+      "print \"${1:Label}: {${2:variable}}\""
+    ],
+    "description": "Print with string interpolation"
+  },
+
+  "Assert equal": {
+    "prefix": ["aeq", "assert.equal"],
+    "body": [
+      "assert.equal(${1:actual}, ${2:expected})"
+    ],
+    "description": "Assert two values are strictly equal"
+  },
+
+  "Assert deep equal": {
+    "prefix": ["adeq", "assert.deepEqual"],
+    "body": [
+      "assert.deepEqual(${1:actual}, ${2:expected})"
+    ],
+    "description": "Assert two values are deeply equal"
+  },
+
+  "Assert ok": {
+    "prefix": ["aok", "assert.ok"],
+    "body": [
+      "assert.ok(${1:value})"
+    ],
+    "description": "Assert a value is truthy"
+  },
+
+  "Schedule task": {
+    "prefix": "schedule",
+    "body": [
+      "schedule.at(\"${1:2025-12-31T00:00:00}\", function()",
+      "\t$0",
+      "end)"
+    ],
+    "description": "Schedule a one-time task"
+  },
+
+  "MQTT publish": {
+    "prefix": "mqttpub",
+    "body": [
+      "mqtt.publish(\"${1:topic/path}\", ${2:payload})"
+    ],
+    "description": "Publish a message to an MQTT topic"
+  },
+
+  "TTS speak": {
+    "prefix": "speak",
+    "body": [
+      "tts.speak(\"${1:Hello world}\")"
+    ],
+    "description": "Speak text aloud via TTS"
+  }
+}

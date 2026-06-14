@@ -1,0 +1,159 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Future",
+  "scopeName": "source.future",
+  "fileTypes": ["future"],
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#string" },
+    { "include": "#number" },
+    { "include": "#constant-language" },
+    { "include": "#keyword-storage" },
+    { "include": "#keyword-control" },
+    { "include": "#keyword-other" },
+    { "include": "#namespace-call" },
+    { "include": "#namespace-bare" },
+    { "include": "#function-definition" },
+    { "include": "#function-call" },
+    { "include": "#operator" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.line.number-sign.future",
+      "match": "#.*$"
+    },
+
+    "string": {
+      "patterns": [
+        { "include": "#string-double" },
+        { "include": "#string-single" }
+      ]
+    },
+
+    "string-double": {
+      "name": "string.quoted.double.future",
+      "begin": "\"",
+      "end": "\"",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.string.begin.future" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.future" }
+      },
+      "patterns": [
+        { "include": "#string-interpolation" },
+        { "name": "constant.character.escape.future", "match": "\\\\[nrtbf\"\\\\]" }
+      ]
+    },
+
+    "string-single": {
+      "name": "string.quoted.single.future",
+      "begin": "'",
+      "end": "'",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.string.begin.future" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.future" }
+      },
+      "patterns": [
+        { "name": "constant.character.escape.future", "match": "\\\\[nrtbf'\\\\]" }
+      ]
+    },
+
+    "string-interpolation": {
+      "name": "meta.interpolation.future",
+      "match": "(\\{)([a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)*)(\\})",
+      "captures": {
+        "1": { "name": "punctuation.definition.interpolation.begin.future" },
+        "2": { "name": "variable.other.readwrite.future" },
+        "3": { "name": "punctuation.definition.interpolation.end.future" }
+      }
+    },
+
+    "number": {
+      "name": "constant.numeric.future",
+      "match": "\\b\\d+(\\.\\d+)?\\b"
+    },
+
+    "constant-language": {
+      "name": "constant.language.future",
+      "match": "\\b(true|false|null|none)\\b"
+    },
+
+    "keyword-storage": {
+      "name": "storage.type.future",
+      "match": "\\b(function|agent)\\b"
+    },
+
+    "keyword-control": {
+      "name": "keyword.control.future",
+      "match": "\\b(if|else|end|for|in|while|try|catch|on|every|stream|return)\\b"
+    },
+
+    "keyword-other": {
+      "name": "keyword.other.future",
+      "match": "\\b(print|use|as|and|or|not)\\b"
+    },
+
+    "namespace-call": {
+      "comment": "Highlights ai.ask( or http.get( — full method-call pattern",
+      "match": "\\b(ai|http|mqtt|tts|rag|vision|home|memory|schedule|system|device|math|assert)\\.(\\w+)(?=\\s*\\()",
+      "captures": {
+        "1": { "name": "support.class.future" },
+        "2": { "name": "support.function.builtin.future" }
+      }
+    },
+
+    "namespace-bare": {
+      "comment": "Highlights namespace.prop access and bare namespace names",
+      "patterns": [
+        {
+          "match": "\\b(ai|http|mqtt|tts|rag|vision|home|memory|schedule|system|device|math|assert)\\.(\\w+)",
+          "captures": {
+            "1": { "name": "support.class.future" },
+            "2": { "name": "variable.other.property.future" }
+          }
+        },
+        {
+          "name": "support.class.future",
+          "match": "\\b(ai|http|mqtt|tts|rag|vision|home|memory|schedule|system|device|math|assert)\\b"
+        }
+      ]
+    },
+
+    "function-definition": {
+      "comment": "function name( — captures the name as entity.name.function",
+      "match": "\\b(function)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()",
+      "captures": {
+        "1": { "name": "storage.type.future" },
+        "2": { "name": "entity.name.function.future" }
+      }
+    },
+
+    "function-call": {
+      "comment": "Any identifier followed by ( that is not a keyword",
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)(?=\\s*\\()",
+      "captures": {
+        "1": { "name": "entity.name.function.future" }
+      }
+    },
+
+    "operator": {
+      "name": "keyword.operator.future",
+      "match": "(==|!=|<=|>=|<|>|\\+|-|\\*|/|=)"
+    },
+
+    "punctuation": {
+      "patterns": [
+        { "name": "punctuation.separator.comma.future", "match": "," },
+        { "name": "punctuation.terminator.future", "match": "\\." },
+        { "name": "punctuation.definition.parameters.begin.future", "match": "\\(" },
+        { "name": "punctuation.definition.parameters.end.future", "match": "\\)" },
+        { "name": "punctuation.definition.block.begin.future", "match": "\\[" },
+        { "name": "punctuation.definition.block.end.future", "match": "\\]" }
+      ]
+    }
+  }
+}
