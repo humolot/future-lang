@@ -1,8 +1,8 @@
-# Assistente: pergunta à IA e fala a resposta em voz alta
-pergunta = "Explique o que é MQTT em uma frase."
-resposta = ai.ask(pergunta)
+# AI assistant — ask a question and speak the answer aloud
+question = "Explain what MQTT is in one sentence."
+answer = ai.ask(question)
 
-print "IA respondeu:"
-print resposta
+print "AI replied:"
+print answer
 
-tts.speak(resposta)
+tts.speak(answer)

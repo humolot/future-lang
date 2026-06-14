@@ -1,12 +1,12 @@
-# Future Lang — Exemplos
+# Future Lang — Examples
 
-Exemplos funcionais usando APIs gratuitas reais.
+Real, working examples using free public APIs.
 
-## Exemplos sem chave de API (rodam imediatamente)
+## No API key required
 
-### `crypto-tracker.future` — Preços de Crypto ao vivo
-Busca BTC, ETH e SOL em tempo real via [Coinbase API](https://api.coinbase.com/v2/prices/BTC-USD/spot).
-Demonstra: `http.get`, `memory.set/get`, `try/catch`.
+### `crypto-tracker.future` — Live crypto prices
+Fetches BTC, ETH, and SOL in real time from the [Coinbase API](https://api.coinbase.com/v2/prices/BTC-USD/spot).
+Demonstrates: `http.get`, `memory.set/get`, `try/catch`.
 
 ```bash
 future run examples/crypto-tracker.future
@@ -14,9 +14,9 @@ future run examples/crypto-tracker.future
 
 ---
 
-### `weather-now.future` — Clima atual
-Clima em Lisboa (ou qualquer cidade — edite lat/lon) via [Open-Meteo](https://open-meteo.com/).
-Demonstra: `http.get`, string interpolation em URLs, `if/else` para decodificar códigos WMO.
+### `weather-now.future` — Current weather
+Current conditions for Lisbon (or any city — edit lat/lon) via [Open-Meteo](https://open-meteo.com/).
+Demonstrates: `http.get`, URL string interpolation, `if/else` to decode WMO codes.
 
 ```bash
 future run examples/weather-now.future
@@ -24,9 +24,9 @@ future run examples/weather-now.future
 
 ---
 
-### `hacker-news.future` — Top 5 do Hacker News
-Busca as histórias mais votadas via [HN Firebase API](https://hacker-news.firebaseio.com/).
-Demonstra: `http.get` com `for` loop, múltiplas chamadas encadeadas, `try/catch`.
+### `hacker-news.future` — Hacker News top 5
+Fetches the top-voted stories right now via the [HN Firebase API](https://hacker-news.firebaseio.com/).
+Demonstrates: `http.get` inside a `for` loop, chained HTTP calls, `try/catch`.
 
 ```bash
 future run examples/hacker-news.future
@@ -34,20 +34,20 @@ future run examples/hacker-news.future
 
 ---
 
-### `pokemon-ai.future` — Pokédex com IA opcional
-Dados completos de qualquer Pokémon via [PokeAPI](https://pokeapi.co/). Se tiver uma chave de IA configurada, gera uma descrição épica automaticamente.
-Demonstra: `http.get`, `for` em arrays aninhados, `try/catch` com fallback.
+### `pokemon-ai.future` — Pokédex with optional AI
+Full Pokémon data from [PokeAPI](https://pokeapi.co/). If an AI provider is configured, generates an epic battle description automatically.
+Demonstrates: `http.get`, `for` over nested arrays, graceful AI fallback.
 
 ```bash
 future run examples/pokemon-ai.future
-# Troque o pokémon editando a variável pokemon_name no arquivo
+# Change the pokémon by editing the pokemon_name variable in the file
 ```
 
 ---
 
-### `dashboard.future` — Dashboard multi-API
-Combina clima + crypto + Hacker News + Pokémon + dica de IA numa única execução.
-Demonstra: múltiplos `http.get`, `try/catch` por seção, `for` loops.
+### `dashboard.future` — Multi-API live dashboard
+Weather + crypto + Hacker News + Pokémon + AI tip — all in one run.
+Demonstrates: multiple `http.get`, per-section `try/catch`, `for` loops.
 
 ```bash
 future run examples/dashboard.future
@@ -55,22 +55,22 @@ future run examples/dashboard.future
 
 ---
 
-## Exemplos com chave de IA
+## Requires an AI provider
 
-Configure primeiro:
+Set up first:
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-# ou
+# or
 export OPENAI_API_KEY=sk-...
-# ou instale Ollama para rodar localmente (sem custo):
+# or install Ollama for free local inference:
 #   https://ollama.ai → ollama pull llama3.2
 #   export FUTURE_AI_PROVIDER=ollama
 ```
 
-### `ai-memory-chat.future` — Chat multi-turno com contexto
-Conversa de 3 turnos onde cada pergunta inclui o contexto das respostas anteriores.
-No terceiro turno usa `ai.complete()` para obter também o modelo, provider e tokens usados.
-Demonstra: `ai.ask`, `ai.complete`, `memory.set/get`, contexto acumulado.
+### `ai-memory-chat.future` — Multi-turn chat with context
+A 3-turn conversation where each question includes the context of previous answers.
+The third turn uses `ai.complete()` to also return the model name, provider, and token count.
+Demonstrates: `ai.ask`, `ai.complete`, `memory.set/get`, accumulated context.
 
 ```bash
 future run examples/ai-memory-chat.future
@@ -78,23 +78,23 @@ future run examples/ai-memory-chat.future
 
 ---
 
-## Outros exemplos
+## Other examples
 
-| Arquivo | Descrição |
-|---------|-----------|
+| File | Description |
+|------|-------------|
 | `hello.future` | Hello World |
-| `math.future` | Funções e aritmética |
-| `api.future` | HTTP GET simples (JSONPlaceholder) |
-| `assistant.future` | IA + TTS (fala a resposta) |
-| `smarthome.future` | Automação com MQTT |
+| `math.future` | Functions and arithmetic |
+| `api.future` | Simple HTTP GET (JSONPlaceholder) |
+| `assistant.future` | AI + TTS (speaks the answer aloud) |
+| `smarthome.future` | Home automation with MQTT |
 
 ---
 
-## APIs usadas (todas gratuitas)
+## Free APIs used
 
-| API | Endpoint | Limite |
-|-----|----------|--------|
-| Coinbase | `api.coinbase.com/v2/prices/…` | Sem limite documentado |
-| Open-Meteo | `api.open-meteo.com/v1/forecast` | 10.000/dia grátis |
-| Hacker News | `hacker-news.firebaseio.com/v0/…` | Sem limite |
-| PokeAPI | `pokeapi.co/api/v2/pokemon/…` | 100/min grátis |
+| API | Endpoint | Rate limit |
+|-----|----------|------------|
+| Coinbase | `api.coinbase.com/v2/prices/…` | No documented limit |
+| Open-Meteo | `api.open-meteo.com/v1/forecast` | 10,000/day free |
+| Hacker News | `hacker-news.firebaseio.com/v0/…` | No limit |
+| PokeAPI | `pokeapi.co/api/v2/pokemon/…` | 100/min free |

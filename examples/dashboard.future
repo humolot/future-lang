@@ -1,58 +1,58 @@
-# Dashboard Multi-API — Tudo de uma vez
-# Combina: clima, crypto, Hacker News e IA numa única execução
-# APIs gratuitas, sem chave (exceto a parte de IA)
+# Live Dashboard — multiple APIs in one run
+# Combines weather, crypto, Hacker News, and AI in a single execution
+# All APIs are free and require no key (except the AI tip section)
 #
-# Uso:
+# Usage:
 #   future run examples/dashboard.future
 
 print "╔══════════════════════════════════════════╗"
-print "║            Dashboard Ao Vivo             ║"
+print "║              Live Dashboard              ║"
 print "╚══════════════════════════════════════════╝"
 print ""
 
-# ─── 1. Clima ────────────────────────────────────
-print "☁  CLIMA — Lisboa"
+# ─── Weather ─────────────────────────────────────
+print "☁  WEATHER — Lisbon"
 print "───────────────────────"
 
 try
-  clima_url = "https://api.open-meteo.com/v1/forecast?latitude=38.7169&longitude=-9.1399&current_weather=true"
-  clima     = http.get(clima_url)
-  cw        = clima.current_weather
-  temp      = cw.temperature
-  vento     = cw.windspeed
-  print "Temperatura : {temp} °C"
-  print "Vento       : {vento} km/h"
+  climate_url = "https://api.open-meteo.com/v1/forecast?latitude=38.7169&longitude=-9.1399&current_weather=true"
+  climate     = http.get(climate_url)
+  cw          = climate.current_weather
+  temp        = cw.temperature
+  wind        = cw.windspeed
+  print "Temperature : {temp} °C"
+  print "Wind        : {wind} km/h"
 catch err
-  print "Clima indisponível: {err.message}"
+  print "Weather unavailable: {err.message}"
 end
 
 print ""
 
-# ─── 2. Crypto ───────────────────────────────────
-print "₿  CRYPTO — Preços (USD)"
+# ─── Crypto ──────────────────────────────────────
+print "₿  CRYPTO — Prices (USD)"
 print "───────────────────────"
 
 try
-  btc_r  = http.get("https://api.coinbase.com/v2/prices/BTC-USD/spot")
-  btc_d  = btc_r.data
-  btc    = btc_d.amount
-  print "Bitcoin (BTC) : $ {btc}"
+  btc_r = http.get("https://api.coinbase.com/v2/prices/BTC-USD/spot")
+  btc_d = btc_r.data
+  btc   = btc_d.amount
+  print "Bitcoin (BTC)  : $ {btc}"
 catch err
-  print "BTC indisponível"
+  print "BTC unavailable"
 end
 
 try
-  eth_r  = http.get("https://api.coinbase.com/v2/prices/ETH-USD/spot")
-  eth_d  = eth_r.data
-  eth    = eth_d.amount
-  print "Ethereum (ETH): $ {eth}"
+  eth_r = http.get("https://api.coinbase.com/v2/prices/ETH-USD/spot")
+  eth_d = eth_r.data
+  eth   = eth_d.amount
+  print "Ethereum (ETH) : $ {eth}"
 catch err
-  print "ETH indisponível"
+  print "ETH unavailable"
 end
 
 print ""
 
-# ─── 3. Hacker News ──────────────────────────────
+# ─── Hacker News ─────────────────────────────────
 print "▲  HACKER NEWS — Top 3"
 print "───────────────────────"
 
@@ -65,48 +65,48 @@ try
     if count < 3
       story_url = "https://hacker-news.firebaseio.com/v0/item/{id}.json"
       story     = http.get(story_url)
-      titulo    = story.title
-      pontos    = story.score
-      print "{rank}. {titulo} ({pontos} pts)"
+      title     = story.title
+      score     = story.score
+      print "{rank}. {title} ({score} pts)"
       count = count + 1
       rank  = rank + 1
     end
   end
 catch err
-  print "HN indisponível: {err.message}"
+  print "HN unavailable: {err.message}"
 end
 
 print ""
 
-# ─── 4. Pokémon do dia ───────────────────────────
-print "✦  POKÉMON DO DIA"
+# ─── Pokémon of the day ──────────────────────────
+print "✦  POKÉMON OF THE DAY"
 print "───────────────────────"
 
 try
-  pk_url = "https://pokeapi.co/api/v2/pokemon/ditto"
-  pk     = http.get(pk_url)
-  pk_nome = pk.name
-  pk_peso = pk.weight
+  pk_url  = "https://pokeapi.co/api/v2/pokemon/ditto"
+  pk      = http.get(pk_url)
+  pk_name = pk.name
+  pk_wt   = pk.weight
   pk_exp  = pk.base_experience
-  print "Nome : {pk_nome}"
-  print "Peso : {pk_peso} hg | XP base: {pk_exp}"
+  print "Name : {pk_name}"
+  print "Weight : {pk_wt} hg  |  Base XP : {pk_exp}"
 catch err
-  print "PokeAPI indisponível"
+  print "PokeAPI unavailable"
 end
 
 print ""
 
-# ─── 5. Dica do dia via IA ───────────────────────
-print "★  DICA DO DIA (IA)"
+# ─── AI tip of the day ───────────────────────────
+print "★  TIP OF THE DAY (AI)"
 print "───────────────────────"
 
 try
-  dica = ai.ask("Dê uma dica curta de produtividade para desenvolvedores em exatamente uma frase.")
-  print dica
+  tip = ai.ask("Give one short productivity tip for developers in exactly one sentence.")
+  print tip
 catch err
-  print "(Configure ANTHROPIC_API_KEY ou OPENAI_API_KEY para ativar)"
+  print "(Set ANTHROPIC_API_KEY or OPENAI_API_KEY to enable)"
 end
 
 print ""
 print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-print "Dashboard atualizado. Execute novamente para refrescar."
+print "Dashboard refreshed. Run again to update."

@@ -1,56 +1,56 @@
-# Crypto Tracker — preços em tempo real via Coinbase
-# API gratuita, sem chave necessária
+# Crypto Tracker — live prices from Coinbase
+# Free public API, no key required
 #
-# Uso:
+# Usage:
 #   future run examples/crypto-tracker.future
 
 print "╔═══════════════════════════════╗"
-print "║   Crypto Tracker — ao vivo    ║"
+print "║    Crypto Tracker — Live      ║"
 print "╚═══════════════════════════════╝"
 print ""
 
-# Buscar preço do Bitcoin
+# Fetch Bitcoin price
 try
-  btc_res = http.get("https://api.coinbase.com/v2/prices/BTC-USD/spot")
-  btc_info = btc_res.data
+  btc_res   = http.get("https://api.coinbase.com/v2/prices/BTC-USD/spot")
+  btc_info  = btc_res.data
   btc_price = btc_info.amount
   print "Bitcoin  (BTC): $ {btc_price}"
 catch err
-  print "Erro ao buscar BTC: {err.message}"
+  print "Failed to fetch BTC: {err.message}"
 end
 
-# Buscar preço do Ethereum
+# Fetch Ethereum price
 try
-  eth_res = http.get("https://api.coinbase.com/v2/prices/ETH-USD/spot")
-  eth_info = eth_res.data
+  eth_res   = http.get("https://api.coinbase.com/v2/prices/ETH-USD/spot")
+  eth_info  = eth_res.data
   eth_price = eth_info.amount
   print "Ethereum (ETH): $ {eth_price}"
 catch err
-  print "Erro ao buscar ETH: {err.message}"
+  print "Failed to fetch ETH: {err.message}"
 end
 
-# Buscar preço do Solana
+# Fetch Solana price
 try
-  sol_res = http.get("https://api.coinbase.com/v2/prices/SOL-USD/spot")
-  sol_info = sol_res.data
+  sol_res   = http.get("https://api.coinbase.com/v2/prices/SOL-USD/spot")
+  sol_info  = sol_res.data
   sol_price = sol_info.amount
   print "Solana   (SOL): $ {sol_price}"
 catch err
-  print "Erro ao buscar SOL: {err.message}"
+  print "Failed to fetch SOL: {err.message}"
 end
 
 print ""
 
-# Salvar última cotação do BTC em memória
-memoria_btc = memory.get("ultimo_btc")
+# Save last BTC price to memory and compare on next run
+last_btc = memory.get("last_btc_price")
 
-if memoria_btc == null
-  print "Primeira consulta — BTC salvo em memória."
+if last_btc == null
+  print "First run — BTC price saved to memory."
 else
-  print "Cotação anterior do BTC: $ {memoria_btc}"
+  print "Previous BTC price: $ {last_btc}"
 end
 
-memory.set("ultimo_btc", btc_price)
+memory.set("last_btc_price", btc_price)
 
 print ""
-print "Fonte: Coinbase API (api.coinbase.com)"
+print "Source: Coinbase API (api.coinbase.com)"

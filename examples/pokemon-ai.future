@@ -1,12 +1,11 @@
-# Pokémon Explorer — PokeAPI + IA
-# PokeAPI é 100% gratuita e sem chave de API
-# A parte de IA é opcional — funciona sem ela também
+# Pokémon Explorer — PokeAPI + optional AI description
+# PokeAPI is free and requires no API key
+# AI description is optional — works without it too
 #
-# Uso:
+# Usage:
 #   future run examples/pokemon-ai.future
 #
-# Para trocar o Pokémon, edite a variável abaixo.
-# Exemplos: pikachu, charizard, mewtwo, snorlax, gengar
+# Change the pokemon below — try: pikachu, charizard, mewtwo, snorlax, gengar
 
 pokemon_name = "charizard"
 
@@ -19,59 +18,59 @@ try
   url = "https://pokeapi.co/api/v2/pokemon/{pokemon_name}"
   p   = http.get(url)
 
-  nome   = p.name
-  altura = p.height
-  peso   = p.weight
+  name   = p.name
+  height = p.height
+  weight = p.weight
   exp    = p.base_experience
 
-  print "Nome            : {nome}"
-  print "Altura          : {altura} dm ({altura}0 cm)"
-  print "Peso            : {peso} hg ({peso}00 g)"
-  print "Experiência base: {exp}"
+  print "Name             : {name}"
+  print "Height           : {height} dm"
+  print "Weight           : {weight} hg"
+  print "Base experience  : {exp}"
   print ""
 
-  # Tipos
-  print "Tipos:"
-  for tipo_slot in p.types
-    tipo_obj  = tipo_slot.type
-    tipo_nome = tipo_obj.name
-    print "  • {tipo_nome}"
+  # Types
+  print "Types:"
+  for type_slot in p.types
+    type_obj  = type_slot.type
+    type_name = type_obj.name
+    print "  • {type_name}"
   end
   print ""
 
-  # Estatísticas base
-  print "Estatísticas base:"
+  # Base stats
+  print "Base stats:"
   for stat_slot in p.stats
     stat_obj   = stat_slot.stat
-    stat_nome  = stat_obj.name
-    stat_valor = stat_slot.base_stat
-    print "  {stat_nome}: {stat_valor}"
+    stat_name  = stat_obj.name
+    stat_value = stat_slot.base_stat
+    print "  {stat_name}: {stat_value}"
   end
   print ""
 
-  # Habilidades
-  print "Habilidades:"
-  for hab_slot in p.abilities
-    hab_obj  = hab_slot.ability
-    hab_nome = hab_obj.name
-    print "  • {hab_nome}"
+  # Abilities
+  print "Abilities:"
+  for ability_slot in p.abilities
+    ability_obj  = ability_slot.ability
+    ability_name = ability_obj.name
+    print "  • {ability_name}"
   end
   print ""
 
-  # IA — descrição épica (requer provider configurado)
+  # AI battle description (requires a configured AI provider)
   try
-    prompt = "O pokémon {nome} tem {exp} de experiência base, altura {altura} dm e peso {peso} hg. Em duas frases, crie uma descrição épica de batalha para ele."
-    descricao = ai.ask(prompt)
-    print "─── Descrição da IA ───"
-    print descricao
+    prompt      = "The pokémon {name} has {exp} base XP, height {height} dm and weight {weight} hg. Write an epic two-sentence battle description for it."
+    description = ai.ask(prompt)
+    print "─── AI Description ───"
+    print description
     print ""
   catch ai_err
-    print "(IA não configurada — configure ANTHROPIC_API_KEY ou OPENAI_API_KEY para ativar)"
+    print "(AI not configured — set ANTHROPIC_API_KEY or OPENAI_API_KEY to enable)"
   end
 
 catch err
-  print "Erro: {err.message}"
-  print "Verifique se o nome do Pokémon está correto (ex: pikachu, charizard, mewtwo)"
+  print "Error: {err.message}"
+  print "Check that the Pokémon name is correct (e.g. pikachu, charizard, mewtwo)"
 end
 
-print "Fonte: PokeAPI (pokeapi.co)"
+print "Source: PokeAPI (pokeapi.co)"

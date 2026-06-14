@@ -1,22 +1,23 @@
-# Previsão do Tempo — Open-Meteo
-# API 100% gratuita, sem chave necessária
-# Mude as coordenadas para qualquer cidade do mundo
+# Current Weather — Open-Meteo
+# 100% free API, no key required
+# Change the coordinates below to any city in the world
 #
-# Uso:
+# Usage:
 #   future run examples/weather-now.future
 
-# Coordenadas (edite para sua cidade)
-# Lisboa:    38.7169, -9.1399
-# São Paulo: -23.5505, -46.6333
+# Coordinates — edit for your city
+# Lisbon:    38.7169, -9.1399
 # New York:  40.7128, -74.0060
+# São Paulo: -23.5505, -46.6333
 # Tokyo:     35.6762, 139.6503
 # Paris:     48.8566, 2.3522
+# London:    51.5074, -0.1278
 
-lat    = "38.7169"
-lon    = "-9.1399"
-cidade = "Lisboa, Portugal"
+lat  = "38.7169"
+lon  = "-9.1399"
+city = "Lisbon, Portugal"
 
-print "=== Tempo Agora em {cidade} ==="
+print "=== Current Weather in {city} ==="
 print ""
 
 try
@@ -25,57 +26,56 @@ try
   cw   = resp.current_weather
 
   temp   = cw.temperature
-  vento  = cw.windspeed
-  codigo = cw.weathercode
-  hora   = cw.time
+  wind   = cw.windspeed
+  code   = cw.weathercode
+  time   = cw.time
 
-  print "Temperatura : {temp} °C"
-  print "Vento       : {vento} km/h"
-  print "Horário     : {hora}"
+  print "Temperature : {temp} °C"
+  print "Wind        : {wind} km/h"
+  print "Time        : {time}"
   print ""
 
-  # Decodificar o código WMO de forma simples
-  descricao = "Desconhecido"
+  # Decode WMO weather code
+  condition = "Unknown"
+  if code == 0
+    condition = "Clear sky"
+  end
+  if code == 1
+    condition = "Mainly clear"
+  end
+  if code == 2
+    condition = "Partly cloudy"
+  end
+  if code == 3
+    condition = "Overcast"
+  end
+  if code == 45
+    condition = "Foggy"
+  end
+  if code == 51
+    condition = "Light drizzle"
+  end
+  if code == 61
+    condition = "Light rain"
+  end
+  if code == 63
+    condition = "Moderate rain"
+  end
+  if code == 65
+    condition = "Heavy rain"
+  end
+  if code == 80
+    condition = "Rain showers"
+  end
+  if code == 95
+    condition = "Thunderstorm"
+  end
 
-  if codigo == 0
-    descricao = "Céu limpo"
-  end
-  if codigo == 1
-    descricao = "Principalmente limpo"
-  end
-  if codigo == 2
-    descricao = "Parcialmente nublado"
-  end
-  if codigo == 3
-    descricao = "Nublado"
-  end
-  if codigo == 45
-    descricao = "Nevoeiro"
-  end
-  if codigo == 51
-    descricao = "Garoa leve"
-  end
-  if codigo == 61
-    descricao = "Chuva leve"
-  end
-  if codigo == 63
-    descricao = "Chuva moderada"
-  end
-  if codigo == 65
-    descricao = "Chuva forte"
-  end
-  if codigo == 80
-    descricao = "Aguaceiros leves"
-  end
-  if codigo == 95
-    descricao = "Trovoada"
-  end
-
-  print "Condição    : {descricao} (código WMO {codigo})"
+  print "Condition   : {condition} (WMO code {code})"
 
 catch err
-  print "Erro ao buscar o tempo: {err.message}"
+  print "Error fetching weather: {err.message}"
 end
 
 print ""
-print "Fonte: Open-Meteo (open-meteo.com)"
+print "Source: Open-Meteo (open-meteo.com)"
