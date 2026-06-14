@@ -4,7 +4,25 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.4.2 → v0.4.3 (current — Browser runtime sync)
+## v0.4.3 → v0.4.4 (current — Examples & VS Code extension)
+
+**No breaking changes.**
+
+### What's new
+
+- **5 real working examples** using free public APIs (no key needed):
+  - `examples/crypto-tracker.future` — BTC/ETH/SOL prices via Coinbase
+  - `examples/weather-now.future` — current weather via Open-Meteo
+  - `examples/hacker-news.future` — HN top stories via Firebase API
+  - `examples/pokemon-ai.future` — Pokédex via PokeAPI + optional AI description
+  - `examples/dashboard.future` — all APIs combined in one run
+  - `examples/ai-memory-chat.future` — multi-turn AI with accumulated context
+- **VS Code extension** published to Marketplace — search "Future Lang" in VS Code or `ext install humolot.future-lang-vscode`
+- README badges (npm · VS Code Marketplace · MIT)
+
+---
+
+## v0.4.2 → v0.4.3 (Browser runtime sync)
 
 **No breaking changes.**
 
