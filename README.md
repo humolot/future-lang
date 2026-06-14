@@ -2,6 +2,10 @@
 
 **An AI-first, IoT-first programming language that transpiles to JavaScript.**
 
+[![npm](https://img.shields.io/npm/v/future-lang.svg)](https://www.npmjs.com/package/future-lang)
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/humolot.future-lang-vscode?label=VS%20Code)](https://marketplace.visualstudio.com/items?itemName=humolot.future-lang-vscode)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Future reads like plain English, runs on Node.js, and gives every program built-in access to AI, HTTP, MQTT, memory, scheduling, and more — without `async`/`await` boilerplate. It also runs fully in the browser.
 
 ---
@@ -496,8 +500,23 @@ Source (.future)  →  Lexer  →  Parser  →  Generator  →  JavaScript
 
 ---
 
+## VS Code extension
+
+Install from the Marketplace for syntax highlighting, snippets, and auto-indent:
+
+```
+ext install humolot.future-lang-vscode
+```
+
+Or search **Future Lang** in the Extensions panel (`Ctrl+Shift+X`).
+
+**Snippets included:** `if`, `ife`, `fn`, `for`, `while`, `try`, `on`, `every`, `stream`, `agent`, `use`, `ask`, `complete`, `httpget`, `httppost`, `httpconf`, `memset`, `memget`, `print`, `aeq`, `speak`, and more.
+
+---
+
 ## Documentation
 
 - [ARCHITECTURE.md](https://github.com/humolot/future-lang/blob/main/ARCHITECTURE.md) — compiler pipeline, folder structure, AST node types
 - [ROADMAP.md](https://github.com/humolot/future-lang/blob/main/ROADMAP.md) — feature status and priorities
 - [MIGRATION.md](https://github.com/humolot/future-lang/blob/main/MIGRATION.md) — changelog, what changed between versions
+- [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=humolot.future-lang-vscode) — Marketplace page

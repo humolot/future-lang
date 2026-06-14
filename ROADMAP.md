@@ -287,7 +287,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | Browser playground | ✅ | `future-playground.html` — 11 examples |
 | `FUTURE_FOR_LLMS.md` | ✅ | BNF grammar + all APIs for AI code assistants |
 | npm publish (`future-lang`) | ✅ | Public — `npm install -g future-lang` |
-| VSCode extension | 📋 | Syntax highlighting, completions, hover |
+| VSCode extension | ✅ | Syntax highlighting + snippets — [Marketplace](https://marketplace.visualstudio.com/items?itemName=humolot.future-lang-vscode) |
 | Language Server (LSP) | 📋 | Full editor integration |
 
 ---
@@ -296,7 +296,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 
 | Priority | Item | Why it matters |
 |----------|------|----------------|
-| 🔴 Critical | VSCode extension (syntax highlighting) | First impression for new users |
+| ✅ Done | VSCode extension (syntax highlighting + snippets) | Published to Marketplace |
 | 🔴 Critical | Language Server (LSP) | Completions and hover for all IDEs |
 | 🟠 High | `ai.extract(text, schema)` | Structured output is the #1 AI use case |
 | 🟠 High | Test isolation (separate process) | Prevents test state leakage |
