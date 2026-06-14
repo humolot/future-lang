@@ -1,6 +1,6 @@
 # Future — Roadmap
 
-**Version:** 0.5.0 · **Last updated:** 2026-06-14
+**Version:** 0.5.2 · **Last updated:** 2026-06-14
 
 Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 
@@ -275,18 +275,21 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| `db.open(path)` | ✅ | Opens or creates an SQLite file |
+| `db.connect(url)` | ✅ | Auto-detects driver from URL — SQLite, PostgreSQL, MySQL |
+| `db.open(path)` | ✅ | Alias for `db.connect()` with SQLite (backward compat) |
 | `db.exec(sql)` | ✅ | DDL — CREATE TABLE, etc. |
 | `db.query(sql, params?)` | ✅ | SELECT → array of rows |
 | `db.get(sql, params?)` | ✅ | SELECT → first row or null |
 | `db.insert(table, data)` | ✅ | Returns `{ id, changes }` |
 | `db.update(table, data, where, params?)` | ✅ | Returns `{ changes }` |
 | `db.delete(table, where, params?)` | ✅ | Returns `{ changes }` |
-| `db.close()` | ✅ | Closes the connection |
-| Parameterized queries (`?` placeholders) | ✅ | SQL injection safe |
-| Optional dependency (`better-sqlite3`) | ✅ | Install only when needed |
+| `db.close()` | ✅ | Closes the connection / pool |
+| Parameterized queries (`?` placeholders) | ✅ | SQL injection safe; auto-rewritten for PostgreSQL |
+| SQLite via `better-sqlite3` | ✅ | Optional dependency |
+| PostgreSQL via `pg` | ✅ | Optional dependency |
+| MySQL / MariaDB via `mysql2` | ✅ | Optional dependency |
 | Migrations / schema versioning | 📋 | Use `db.exec()` with IF NOT EXISTS for now |
-| Multiple databases open simultaneously | 📋 | One `db.open()` at a time currently |
+| Multiple simultaneous connections | 📋 | One active connection at a time currently |
 
 ---
 

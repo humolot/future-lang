@@ -321,10 +321,18 @@ Inside a route block, `req` contains:
 
 ### `db`
 
-SQLite database via `better-sqlite3` (optional dependency — install separately).
+Multi-database namespace. Supports SQLite, PostgreSQL, and MySQL behind a unified API.
 
 ```
-db.open("./app.db")                              # open or create file
+# Connect — driver is auto-detected from the URL
+db.connect("./app.db")                              # SQLite (local file)
+db.connect(":memory:")                              # SQLite in-memory
+db.connect("postgres://user:pass@localhost/mydb")   # PostgreSQL
+db.connect("mysql://user:pass@localhost/mydb")      # MySQL / MariaDB
+
+# db.open(path) is a backward-compatible alias for SQLite
+db.open("./app.db")
+
 db.exec("CREATE TABLE IF NOT EXISTS t (id INTEGER PRIMARY KEY, name TEXT)")
 
 rows = db.query("SELECT * FROM t WHERE name LIKE ?", ["%alice%"])  # → array
@@ -339,10 +347,14 @@ db.delete("t", "id = ?", [result.id])                       # → { changes }
 db.close()
 ```
 
-Install `better-sqlite3` before using `db`:
+Install only the driver you need:
 ```bash
-npm install better-sqlite3
+npm install better-sqlite3   # SQLite
+npm install pg               # PostgreSQL
+npm install mysql2           # MySQL / MariaDB
 ```
+
+Use `?` placeholders in all SQL regardless of the database — the runtime rewrites them to `$1, $2, ...` for PostgreSQL automatically.
 
 ### `assert` (use in *.test.future files)
 ```

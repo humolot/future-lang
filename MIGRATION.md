@@ -4,7 +4,41 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.4.6 → v0.5.0 (current — HTTP server + SQLite database + array indexing)
+## v0.5.1 → v0.5.2 (current — `db.connect()` with PostgreSQL and MySQL)
+
+**No breaking changes.** `db.open()` still works as before.
+
+### `db.connect(url)` — multi-database support
+
+A single function connects to any supported database. The driver is auto-detected from the URL scheme:
+
+```future
+# SQLite — local file, no server needed (default)
+db.connect("./app.db")
+db.connect(":memory:")                            # in-memory SQLite
+
+# PostgreSQL
+db.connect("postgres://user:pass@localhost/mydb")
+
+# MySQL / MariaDB
+db.connect("mysql://user:pass@localhost/mydb")
+```
+
+Install only the driver you need:
+
+```bash
+npm install better-sqlite3   # SQLite
+npm install pg               # PostgreSQL
+npm install mysql2           # MySQL / MariaDB
+```
+
+All `db.*` operations (`query`, `get`, `insert`, `update`, `delete`) work identically across all three drivers. `?` placeholders in SQL are automatically rewritten to `$1, $2, ...` for PostgreSQL — no code changes needed when switching databases.
+
+`db.open(path)` remains as a backward-compatible alias for `db.connect(path)` with SQLite.
+
+---
+
+## v0.4.6 → v0.5.0 (HTTP server + SQLite database + array indexing)
 
 **No breaking changes.**
 

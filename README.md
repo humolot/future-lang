@@ -201,7 +201,7 @@ mqtt.publish("home/livingroom/light", "on")
 | `http`     | `get(url)`, `post(url, body)`, `configure(opts)` | Parses JSON automatically; throws `HttpError` with `.status`, `.code`, `.body` |
 | `ai`       | `ask(prompt, opts?)`, `chat(messages, opts?)`, `embed(text)`, `stream(prompt, cb, opts?)`, `configure(provider, key)` | opts: `{ temperature, max_tokens, model }`; throws `AiError` |
 | `server`   | Route blocks (`get/post/put/patch/delete`), `listen(port)`, `close()` | HTTP server; implicit `req` in route body |
-| `db`       | `open(path)`, `exec(sql)`, `query(sql, p?)`, `get(sql, p?)`, `insert(t, data)`, `update(t, data, w, p?)`, `delete(t, w, p?)`, `close()` | SQLite via `better-sqlite3` (optional dep) |
+| `db`       | `connect(url)`, `open(path)`, `exec(sql)`, `query(sql, p?)`, `get(sql, p?)`, `insert(t, data)`, `update(t, data, w, p?)`, `delete(t, w, p?)`, `close()` | SQLite · PostgreSQL · MySQL — driver auto-detected from URL |
 | `tts`      | `speak(text)` | System engine (`say` / SAPI / `espeak-ng`) |
 | `mqtt`     | `publish(topic, msg)`, `subscribe(topic, handler)` | Real broker or in-process loopback |
 | `memory`   | `set(key, v)`, `get(key)`, `delete(key)`, `search(q)`, `forget(pattern?)` | In-process key-value store |
@@ -338,7 +338,15 @@ end
 Build a REST API entirely in Future. No external frameworks needed.
 
 ```future
-db.open("./app.db")
+# SQLite (local file — no server needed)
+db.connect("./app.db")
+
+# PostgreSQL
+# db.connect("postgres://user:pass@localhost/mydb")
+
+# MySQL / MariaDB
+# db.connect("mysql://user:pass@localhost/mydb")
+
 db.exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)")
 
 server.get("/api/users")
@@ -380,10 +388,12 @@ Inside any route block, the implicit `req` variable contains:
 
 `return` an object → JSON response. `return` a string → `text/plain`. `return null` → 204 No Content.
 
-SQLite requires `better-sqlite3`:
+Install the driver for the database you need:
 
 ```bash
-npm install better-sqlite3
+npm install better-sqlite3   # SQLite (default)
+npm install pg               # PostgreSQL
+npm install mysql2           # MySQL / MariaDB
 ```
 
 ---
