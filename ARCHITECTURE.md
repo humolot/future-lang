@@ -15,22 +15,25 @@ future-lang/
 │   ├── index.js                    # Public API — compile(source, options)
 │   ├── lexer.js                    # Phase 1: source text → token list
 │   ├── parser.js                   # Phase 2: token list → AST
-│   ├── ast.js                      # AST node types and factory functions (23 types)
+│   ├── ast.js                      # AST node types and factory functions (24 types)
 │   ├── generator.js                # Phase 3: AST → JavaScript source
 │   ├── errors.js                   # FutureError with line/column tracking
-│   └── cli.js                      # CLI binary: future run / future compile
+│   ├── formatter.js                # Line-based auto-formatter (future fmt)
+│   ├── sourcemap.js                # VLQ encoder + Source Map v3 builder
+│   └── cli.js                      # CLI binary: 9 commands including future test
 │
 ├── runtime/                        # Capability modules (imported by generated JS)
 │   ├── index.js                    # Aggregator: runtime object + manifest + introspection
 │   │
-│   ├── ai.js                       # Text generation — pluggable provider architecture
-│   ├── http.js                     # REST API consumption (fetch-based)
+│   ├── ai.js                       # Text generation — ask/chat/stream accept opts {temperature, max_tokens, model}
+│   ├── http.js                     # REST API — HttpError class, configure() for global headers/timeout
 │   ├── mqtt.js                     # Pub/sub messaging (real broker or in-process loopback)
 │   ├── tts.js                      # Text-to-speech (system engine)
 │   ├── rag.js                      # RAG — chunk → embed → store → retrieve → answer
 │   ├── vision.js                   # Vision AI — describe, detect, ocr, classify, compare
 │   ├── home.js                     # Home automation (composes over MQTT)
 │   │
+│   ├── assert.js                   # Test assertions — ok/equal/notEqual/deepEqual/fail
 │   ├── memory.js                   # In-process key-value store (set/get/search/delete/forget)
 │   ├── schedule.js                 # Recurring / one-shot / cron scheduling
 │   ├── system.js                   # OS utilities: exec, open, notify, read, write
@@ -41,7 +44,7 @@ future-lang/
 │   │
 │   ├── providers/                  # AI provider implementations
 │   │   ├── index.js                # Provider factory + env-var resolution
-│   │   ├── anthropic.js            # Anthropic Messages API (native format)
+│   │   ├── anthropic.js            # Anthropic Messages API — AiError class, opts forwarding
 │   │   ├── openai-compat.js        # OpenAI-compatible (OpenAI, Ollama, Gemini, OpenRouter, …)
 │   │   └── util.js                 # SSE parser, keyword vector, cosine similarity
 │   │
@@ -69,6 +72,7 @@ future-lang/
 │
 ├── future-browser.js               # Browser entry point: window.Future + <script type="future">
 ├── future-playground.html          # In-browser editor (11 examples, live compile)
+├── FUTURE_FOR_LLMS.md              # BNF grammar + all APIs — quick-reference for AI assistants
 ├── package.json
 ├── ARCHITECTURE.md                 # This file
 ├── ROADMAP.md                      # Feature roadmap
@@ -114,7 +118,7 @@ In **browser mode** (`browserMode: true` option), the `import` statement is omit
 
 ## Lexer
 
-### Keywords (24)
+### Keywords (26)
 
 | Keyword | Token | Purpose |
 |---------|-------|---------|
@@ -136,7 +140,8 @@ In **browser mode** (`browserMode: true` option), the `import` statement is omit
 | `null` / `none` | NULL | Null literal (two spellings) |
 | `stream` | STREAM | Streaming statement |
 | `agent` | AGENT | Agent declaration |
-| `use` | USE | Capability declaration inside `agent` |
+| `use` | USE | Import statement / capability declaration inside `agent` |
+| `as` | AS | Alias in `use "..." as alias` |
 
 ### String escape
 
@@ -144,12 +149,13 @@ In **browser mode** (`browserMode: true` option), the `import` statement is omit
 
 ---
 
-## AST Node Types (23)
+## AST Node Types (24)
 
 | Category | Nodes |
 |----------|-------|
 | Program | `Program` |
 | Statements | `PrintStatement`, `Assignment`, `IfStatement`, `FunctionDeclaration`, `ReturnStatement`, `ExpressionStatement` |
+| Import | `UseStatement` — `use "path"` / `use "path" as alias` |
 | Control flow | `ForStatement`, `WhileStatement`, `TryStatement` |
 | Event statements | `OnStatement`, `EveryStatement` |
 | AI/IoT statements | `AgentDeclaration`, `StreamStatement` |
@@ -191,11 +197,36 @@ export const NAMESPACES = new Set([
   'ai', 'http', 'mqtt', 'tts',
   'rag', 'vision', 'home',
   'memory', 'schedule', 'system', 'device',
-  'math',
+  'math', 'assert',
 ]);
 ```
 
 Any identifier in this set, when used as the object of a `MemberExpression` or `CallExpression`, is routed through `__rt` in ASYNC mode. Adding a new capability is just a name in this set plus a matching runtime module — no grammar change.
+
+`use ... as alias` imports are tracked in a `useAliases` Set and explicitly excluded from namespace routing — `m.add()` never becomes `__rt.m.add()`.
+
+### Source maps (`sourceMaps` option)
+
+When `compile(source, { sourceMaps: true })` is used, the generator prefixes each top-level statement line with `/*@FL:N*/` (where N is the original `.future` line number). `src/sourcemap.js` post-processes this output:
+
+1. Scans the generated JS line by line.
+2. Strips `/*@FL:N*/` markers.
+3. Builds VLQ-encoded `mappings` in Source Map v3 format.
+4. Returns `{ code: cleanJS, map: { version: 3, sources, sourcesContent, mappings } }`.
+
+The CLI appends `//# sourceMappingURL=file.js.map` to the clean JS and writes the map as JSON.
+
+### Import system (UseStatement)
+
+`use "./file.future"` statements are emitted before all other code. At compile time, when `resolveSource` is provided, the compiler reads the imported file, parses it, and extracts top-level `FunctionDeclaration` names. This enables named imports:
+
+```js
+import { formatName, greet } from "./utils.js";   // named import (default)
+import * as m from "./math.js";                    // namespace import (alias)
+import * as df from "date-fns";                    // npm package (alias)
+```
+
+The `pathMap` option (a `Map<futurePath, fileURL>`) allows `future run` to redirect imports to temp `.mjs` files compiled in `tmpdir`.
 
 ### String interpolation
 
@@ -227,7 +258,7 @@ In ASYNC mode, ALL call expressions where the callee is a `MemberExpression` are
 ```
 runtime/index.js
 │
-├── Imports 12 capability modules (+ readline for input())
+├── Imports 13 capability modules (+ readline for input())
 ├── Exports `runtime` object  →  used as `__rt` in generated JS
 ├── Exports `manifest`        →  structured metadata for every function
 └── Attaches introspection:
@@ -236,6 +267,8 @@ runtime/index.js
       runtime.describe()          → { version, modules, manifest }
       runtime.input(prompt)       → Promise<string>  (stdin)
 ```
+
+When `FUTURE_DEBUG=1` (`future run --debug`), the runtime is wrapped by `wrapDebug()` which proxies every namespace method to log timing and arguments to stderr with ANSI colours.
 
 ### Manifest shape (per function)
 
@@ -402,14 +435,15 @@ await __rt.ai.stream("Tell me a story", async (chunk) => {
 
 ---
 
-## Adding a New Capability (4 steps)
+## Adding a New Capability (5 steps)
 
 1. Create `runtime/mymodule.js` with named exports.
 2. Import it in `runtime/index.js`, add to `runtime` object, `MODULE_NAMES`, and `manifest`.
 3. Add the namespace name to `NAMESPACES` in `src/generator.js`.
-4. Add the module to `browserRuntime` in `runtime/browser.js` if browser support is wanted.
+4. Add the namespace name to `RESERVED_NAMESPACES` in `src/parser.js`.
+5. Add the module to `browserRuntime` in `runtime/browser.js` if browser support is wanted.
 
-No grammar, lexer, parser, or AST changes needed.
+No grammar, lexer, or AST changes needed.
 
 ---
 

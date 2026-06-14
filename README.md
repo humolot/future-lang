@@ -182,8 +182,8 @@ mqtt.publish("home/livingroom/light", "on")
 
 | Namespace  | Functions | Notes |
 |------------|-----------|-------|
-| `http`     | `get(url)`, `post(url, body)` | Parses JSON automatically |
-| `ai`       | `ask(prompt)`, `chat(messages)`, `embed(text)`, `stream(prompt, cb)`, `configure(provider, key)` | Pluggable providers |
+| `http`     | `get(url)`, `post(url, body)`, `configure(opts)` | Parses JSON automatically; throws `HttpError` with `.status`, `.code`, `.body` |
+| `ai`       | `ask(prompt, opts?)`, `chat(messages, opts?)`, `embed(text)`, `stream(prompt, cb, opts?)`, `configure(provider, key)` | opts: `{ temperature, max_tokens, model }`; throws `AiError` |
 | `tts`      | `speak(text)` | System engine (`say` / SAPI / `espeak-ng`) |
 | `mqtt`     | `publish(topic, msg)`, `subscribe(topic, handler)` | Real broker or in-process loopback |
 | `memory`   | `set(key, v)`, `get(key)`, `delete(key)`, `search(q)`, `forget(pattern?)` | In-process key-value store |
@@ -194,6 +194,7 @@ mqtt.publish("home/livingroom/light", "on")
 | `home`     | `turnOn(device)`, `turnOff(device)`, `set(device, value)` | Home automation via MQTT |
 | `math`     | `round`, `floor`, `ceil`, `abs`, `sqrt`, `pow`, `log`, `random`, `min`, `max`, `pi`, `e` | Full Math wrapper |
 | `device`   | `register(config)`, `get(name)`, `list()` | IoT device registry |
+| `assert`   | `ok(val)`, `equal(a, b)`, `notEqual(a, b)`, `deepEqual(a, b)`, `fail(msg?)` | Use in `*.test.future` files |
 
 ### Configuration (environment variables)
 
@@ -211,12 +212,47 @@ FUTURE_VECTOR_DB=memory          # memory | file | qdrant
 ## AI configuration
 
 ```future
-# From code
+# Provider selection
 ai.configure("openai", "sk-...")
 ai.configure("ollama")           # local, no key needed
 
+# Basic usage
 answer = ai.ask("What is 2 + 2?")
 print answer
+
+# With inference options
+precise = ai.ask("List the planets.", { temperature: 0.1  max_tokens: 150 })
+creative = ai.chat(messages, { temperature: 0.9  model: "gpt-4o" })
+```
+
+## HTTP configuration
+
+```future
+# Set global headers and timeout once at the top of your program
+http.configure({ headers: { Authorization: "Bearer {token}" }  timeout: 5000 })
+
+data = http.get("https://api.example.com/me")   # Authorization header included automatically
+```
+
+## Structured errors
+
+HTTP and AI errors now carry structured data you can inspect:
+
+```future
+try
+    data = http.get("https://api.example.com/private")
+catch err
+    print "Status: {err.status}"     # e.g. 401
+    print "Code:   {err.code}"       # e.g. HTTP_401
+    print "URL:    {err.url}"
+end
+
+try
+    reply = ai.ask("hello")
+catch err
+    print "Provider: {err.provider}"  # e.g. anthropic
+    print "Status:   {err.status}"    # e.g. 429
+end
 ```
 
 ---
@@ -333,14 +369,47 @@ Open `future-playground.html` in any browser for a live editor with 11 built-in 
 ```bash
 npm install -g future-lang
 
-future --version                    # show version
-future new myapp                    # create a new project
-future run program.future           # compile + run
-future compile program.future       # compile to JavaScript
-future check program.future         # syntax check only
-future fmt program.future           # format source in-place
-future playground                   # launch the interactive playground
-future doctor                       # check your environment
+future --version                         # show version
+future new myapp                         # create a new project
+future run program.future                # compile + run
+future run --debug program.future        # run with per-call timing logs
+future compile program.future            # compile to JavaScript
+future compile --sourcemap program.future  # compile + emit .js.map
+future test                              # run all *.test.future files
+future test myfeature                    # run matching test files
+future check program.future              # syntax check only
+future fmt program.future                # format source in-place
+future playground                        # launch the interactive playground
+future doctor                            # check your environment
+```
+
+---
+
+## Testing
+
+Name your test files `*.test.future` (or put them in a `test/` folder) and use the `assert` namespace:
+
+```future
+# math.test.future
+
+assert.equal(math.round(3.7), 4)
+assert.equal(math.sqrt(16), 4)
+assert.ok(math.pi > 3.14)
+assert.notEqual(math.random(), math.random())
+print "math tests passed"
+```
+
+```bash
+future test            # runs all *.test.future files
+future test math       # runs files matching "math"
+```
+
+Output:
+```
+math tests passed
+  ✓ math.test.future
+
+1/1 tests passed
 ```
 
 ---

@@ -4,7 +4,215 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.3.1 → v0.3.2 (current — Phase 7: General-Purpose Programming)
+## v0.4.0 → v0.4.1 (current — Gemini improvements)
+
+**No breaking changes.**
+
+### AI inference options
+
+`ai.ask`, `ai.chat`, and `ai.stream` now accept an optional second argument with inference parameters:
+
+```future
+# temperature controls creativity (0.0 = deterministic, 1.0 = creative)
+precise  = ai.ask("List the planets.", { temperature: 0.1  max_tokens: 100 })
+creative = ai.chat(messages, { temperature: 0.9  model: "gpt-4o" })
+ai.stream(prompt, { temperature: 0.7 })
+```
+
+Supported fields: `temperature`, `max_tokens`, `model`, `system` (Anthropic only).
+Both providers (Anthropic native, OpenAI-compat) forward all opts to the API.
+
+### Structured errors
+
+`HttpError` and `AiError` replace generic `Error` objects. Catchable with `try/catch err`:
+
+```future
+try
+    data = http.get("https://api.example.com/private")
+catch err
+    print "{err.status}"    # 401
+    print "{err.code}"      # HTTP_401
+    print "{err.url}"       # https://api.example.com/private
+end
+
+try
+    reply = ai.ask("hello")
+catch err
+    print "{err.provider}"  # anthropic
+    print "{err.status}"    # 429
+    print "{err.code}"      # AI_HTTP_429
+end
+```
+
+Error classes are exported from `runtime/providers/anthropic.js` (`AiError`) and `runtime/http.js` (`HttpError`) for use in JS integrations.
+
+### `http.configure()` — global request defaults
+
+```future
+# Call once at the top of your program
+http.configure({ headers: { Authorization: "Bearer {token}" }  timeout: 5000 })
+
+# All subsequent http.get / http.post calls include the header and timeout automatically
+data = http.get("https://api.example.com/me")
+```
+
+Supported fields: `headers` (merged with per-call headers), `timeout` (ms, uses `AbortSignal.timeout`).
+
+### Source maps (`future compile --sourcemap`)
+
+```bash
+future compile --sourcemap program.future
+# Produces: program.js  +  program.js.map
+```
+
+The `.js.map` is a standard Source Map v3 file. Stack traces in Node.js, VS Code, and browser DevTools automatically map back to the original `.future` line numbers.
+
+The generator embeds `/*@FL:N*/` markers at each statement and `src/sourcemap.js` post-processes them into VLQ-encoded mappings.
+
+### `future test` command + `assert` namespace
+
+```bash
+future test            # finds and runs all *.test.future / test/**/*.future files
+future test myfeature  # filter by filename substring
+```
+
+Test files use the reserved `assert` namespace:
+
+```future
+# calculator.test.future
+assert.equal(1 + 1, 2)
+assert.ok(math.sqrt(16) == 4)
+assert.notEqual("hello", "world")
+assert.deepEqual([1, 2, 3], [1, 2, 3])
+```
+
+Exit code 0 when all pass, 1 when any fail. `assert.*` calls throw `AssertionError` on failure — the test runner catches them and reports per-file results.
+
+`assert` is a reserved namespace — it cannot be redefined by user code.
+
+### Internal changes
+
+- `runtime/assert.js` — new module, wraps `node:assert/strict`
+- `src/sourcemap.js` — new module, VLQ encoder + Source Map v3 builder
+- `runtime/providers/anthropic.js` — exports `AiError` class; `chat`/`stream` accept `opts`
+- `runtime/providers/openai-compat.js` — imports `AiError`; `chat`/`stream` accept `opts`
+- `runtime/http.js` — exports `HttpError` class; `get`/`post` throw it; adds `configure()`; uses `AbortSignal.timeout`
+- `runtime/index.js` — `assert` added to module list, `_base`, and `manifest`
+- `src/generator.js` — `assert` added to `NAMESPACES`; `sourceMaps` option emits `/*@FL:N*/` markers
+- `src/parser.js` — `assert` added to `RESERVED_NAMESPACES`
+- `src/cli.js` — `future test` command; `--sourcemap` flag in `future compile`; calls `buildSourceMap()` to strip markers and write `.js.map`
+
+---
+
+## v0.3.2 → v0.4.0 (CLI + Import system + Language improvements)
+
+**No breaking changes.**
+
+### CLI commands
+
+```bash
+future run <file.future>        # compile + run
+future compile <file.future>    # compile to .js next to source
+future new <name>               # scaffold a new project directory
+future check <file.future>      # syntax-check only, no output
+future fmt <file.future>        # auto-format source in-place
+future playground               # launch the interactive playground
+future doctor                   # check Node.js version, runtime, AI env, MQTT, etc.
+future --version                # show version
+future run --debug <file>       # print per-call timing to stderr (FUTURE_DEBUG=1)
+```
+
+### Import system (`use`)
+
+```future
+# Import all top-level functions by name
+use "./utils.future"
+print formatName("Alice")
+
+# Import as a namespace
+use "./math.future" as m
+result = m.add(10, 20)
+
+# Import an npm package as a namespace
+use "date-fns" as df
+```
+
+Compiles to standard ES module imports:
+
+```js
+import { formatName } from "./utils.js";
+import * as m from "./math.js";
+import * as df from "date-fns";
+```
+
+The compiler reads imported `.future` files at compile time, parses them, and extracts top-level function names to generate named imports instead of wildcard imports. Dependencies are compiled recursively.
+
+`use ... as alias` aliases are excluded from `__rt` routing — `m.add()` does not become `__rt.m.add()`.
+
+### `else if` chains
+
+```future
+if score >= 90
+    print "A"
+else if score >= 80
+    print "B"
+else if score >= 70
+    print "C"
+else
+    print "F"
+end
+```
+
+One `end` closes the entire chain. Previously required nesting.
+
+### Reserved namespace protection
+
+Trying to reassign a namespace name now raises a compile-time error:
+
+```future
+math = 42   # error[parse]: 'math' is a reserved namespace
+http = {}   # error[parse]: 'http' is a reserved namespace
+```
+
+### Async handler error safety (`__safe`)
+
+Programs that use `on`, `every`, or `stream` now wrap their handlers in `__safe`. Errors inside handlers are logged to `stderr` with `[future:ns]` prefix instead of crashing the process silently:
+
+```js
+const __safe = (ns, fn) => async (...a) => {
+  try { return await fn(...a); }
+  catch (e) { console.error(`[future:${ns}]`, e.message); }
+};
+```
+
+### Better error messages
+
+Parse errors now show the source line and a `^` pointer:
+
+```
+error[parse]: Expected 'end' to close 'if' — did you forget 'end'?
+  --> hello.future:5:1
+   5 | x = 1
+      ^
+```
+
+### `FUTURE_FOR_LLMS.md`
+
+A complete quick-reference for AI assistants generating Future code: BNF grammar, all keywords, all namespace APIs, every construct with an example, common mistakes, and what-compiles-to-what pairs.
+
+### Internal changes
+
+- `src/lexer.js` — `as` keyword added (`AS` token)
+- `src/ast.js` — `UseStatement` node type and factory added
+- `src/parser.js` — `parseUse()`, `parseIf(isChained)` updated; `RESERVED_NAMESPACES` set added
+- `src/generator.js` — `genUseStatement()`, `useAliases` Set, `isModule` and `pathMap` options, `__safe` emission, `else if` chain detection
+- `src/index.js` — `compile()` accepts `resolveSource`, `isModule`, `pathMap`, `importedNames` options
+- `src/formatter.js` — new module: line-based indentation formatter
+- `src/cli.js` — full rewrite; `compileDepsToTemp()` for `future run`; all CLI commands implemented
+
+---
+
+## v0.3.1 → v0.3.2 (Phase 7: General-Purpose Programming)
 
 **No breaking changes.**
 

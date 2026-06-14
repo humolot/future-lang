@@ -1,6 +1,6 @@
 # Future — Roadmap
 
-**Version:** 0.3.0 · **Last updated:** 2026-06-13
+**Version:** 0.4.1 · **Last updated:** 2026-06-13
 
 Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 
@@ -18,7 +18,9 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | Multi-line strings | 📋 | Strings must be single-line today |
 | String `+` concatenation | ✅ | Works via binary `+` operator |
 | Integer division / modulo | 📋 | `math.trunc(a / b)` workaround for now |
-| `use "other.future"` imports | 💡 | No cross-file composition yet |
+| `use "other.future"` imports | ✅ | Named + namespace imports; npm packages; recursive deps |
+| `else if` chains | ✅ | One `end` for the whole chain |
+| Reserved namespace protection | ✅ | Compile-time error if reserved name is reassigned |
 | REPL (`future repl`) | 💡 | Interactive shell with introspection |
 
 ---
@@ -28,11 +30,14 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | Feature | Status | Notes |
 |---------|--------|-------|
 | `ai.ask(prompt)` | ✅ | Single-turn Q&A |
+| `ai.ask(prompt, opts)` | ✅ | `opts`: `temperature`, `max_tokens`, `model`, `system` |
 | `ai.chat(messages)` | ✅ | Multi-turn conversation |
+| `ai.chat(messages, opts)` | ✅ | Inference options forwarded to provider |
 | `ai.embed(text)` | ✅ | Real embeddings (OpenAI/Ollama) + keyword fallback |
-| `ai.stream(prompt, callback)` | ✅ | Streaming via SSE — runtime implemented |
+| `ai.stream(prompt, cb, opts?)` | ✅ | Streaming via SSE; opts forwarded |
 | `stream ai.ask() ... end` syntax | ✅ | Language-level streaming with implicit `chunk` variable |
 | `ai.configure(provider, key, model)` | ✅ | Pluggable provider from Future code |
+| Structured `AiError` (status, code, provider) | ✅ | Catchable with rich properties |
 | Provider: Anthropic | ✅ | Native Messages API |
 | Provider: OpenAI | ✅ | Via OpenAI-compat layer |
 | Provider: Ollama | ✅ | Local models, no key needed |
@@ -205,8 +210,11 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | `len(x)` built-in | ✅ | Arrays, strings, objects — sync, no runtime needed |
 | `math.*` module | ✅ | Full JS Math wrapper |
 | `input(prompt)` built-in | ✅ | stdin (Node.js) / `window.prompt` (browser) |
+| `else if` chains | ✅ | One `end` closes the whole chain |
+| `use "./file.future"` imports | ✅ | Named or namespace imports, recursive deps |
+| `use "npm-pkg" as alias` | ✅ | Import npm packages as namespaces |
+| Reserved namespace protection | ✅ | Compile-time error on redefinition |
 | Multi-line strings | 📋 | Strings must be single-line |
-| `use "other.future"` — module imports | 💡 | No cross-file composition |
 | REPL (`future repl`) | 💡 | Interactive shell with introspection |
 
 ---
@@ -230,21 +238,57 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 
 ---
 
+## HTTP
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `http.get(url, headers?)` | ✅ | Parses JSON or returns text |
+| `http.post(url, body, headers?)` | ✅ | JSON body; parses response |
+| `http.configure({ headers, timeout })` | ✅ | Global defaults for all requests |
+| Structured `HttpError` (status, code, url, body) | ✅ | Catchable with rich properties |
+| `http.put / patch / delete` | 📋 | Additional HTTP verbs |
+| Response headers access | 📋 | `res.headers.get("content-type")` |
+
+---
+
+## Testing
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `future test` command | ✅ | Finds `*.test.future` / `test/**/*.future`, runs all |
+| `future test <pattern>` | ✅ | Filter by filename substring |
+| `assert` namespace | ✅ | `ok`, `equal`, `notEqual`, `deepEqual`, `fail` |
+| Per-file pass/fail reporting | ✅ | `✓` / `✗` with error message |
+| Exit code 1 on failure | ✅ | Integrates with CI |
+| Test isolation (separate process) | 📋 | Currently runs in same Node process |
+| `assert.throws(fn)` | 📋 | Assert that a function throws |
+| Coverage reporting | 💡 | Line coverage for `.future` files |
+
+---
+
 ## Tooling
 
 | Feature | Status | Notes |
 |---------|--------|-------|
 | CLI: `future run` | ✅ | |
 | CLI: `future compile` | ✅ | |
-| Structured manifest | ✅ | All 12 modules, 50+ functions fully described |
+| CLI: `future compile --sourcemap` | ✅ | Emits Source Map v3 `.js.map` |
+| CLI: `future run --debug` | ✅ | Per-call timing via `FUTURE_DEBUG=1` |
+| CLI: `future test` | ✅ | Test runner for `*.test.future` files |
+| CLI: `future new` | ✅ | Project scaffold |
+| CLI: `future check` | ✅ | Syntax-check without running |
+| CLI: `future fmt` | ✅ | Auto-formatter |
+| CLI: `future doctor` | ✅ | Environment health check |
+| CLI: `future playground` | ✅ | Launches browser playground server |
+| Source maps (`.js.map`) | ✅ | VLQ-encoded Source Map v3 |
+| Structured manifest | ✅ | All 13 modules, 50+ functions fully described |
 | Runtime introspection API | ✅ | `runtime.describe()` / `listModules()` / `listFunctions()` |
 | LSP metadata module | ✅ | Completions, hover, signatures |
 | Browser playground | ✅ | `future-playground.html` — 11 examples |
+| `FUTURE_FOR_LLMS.md` | ✅ | BNF grammar + all APIs for AI code assistants |
+| npm publish (`future-lang`) | ✅ | Public — `npm install -g future-lang` |
 | VSCode extension | 📋 | Syntax highlighting, completions, hover |
 | Language Server (LSP) | 📋 | Full editor integration |
-| `future fmt` | 📋 | Auto-formatter |
-| `future check` | 📋 | Lint / type check without running |
-| npm publish (`future-lang`) | 📋 | Public package registry |
 
 ---
 
@@ -252,12 +296,15 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 
 | Priority | Item | Why it matters |
 |----------|------|----------------|
-| 🔴 Critical | npm publish (`future-lang`) | Required to ship publicly |
 | 🔴 Critical | VSCode extension (syntax highlighting) | First impression for new users |
-| 🟠 High | `use "other.future"` imports | Cross-file composition for real projects |
-| 🟠 High | `system.env(name)` | Read env vars from Future code |
+| 🔴 Critical | Language Server (LSP) | Completions and hover for all IDEs |
+| 🟠 High | `ai.extract(text, schema)` | Structured output is the #1 AI use case |
+| 🟠 High | Test isolation (separate process) | Prevents test state leakage |
+| 🟠 High | `assert.throws(fn)` | Needed for error-handling tests |
 | 🟡 Medium | Home Assistant REST API | Most HA users don't run MQTT |
 | 🟡 Medium | Persistent memory / device registry | Most programs are stateless today |
 | 🟡 Medium | Agent tool-calling loop (ReAct) | True autonomous agents |
+| 🟡 Medium | `http.put / patch / delete` | Needed for full REST APIs |
 | 🟢 Low | `rag.delete(id)` | Selective document removal |
 | 🟢 Low | REPL | Nice-to-have for exploration |
+| 🟢 Low | Coverage reporting | `.future` line coverage |
