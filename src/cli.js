@@ -22,7 +22,7 @@ import { format } from './formatter.js';
 import { FutureError } from './errors.js';
 import { buildSourceMap } from './sourcemap.js';
 
-const VERSION = '0.4.3';
+const VERSION = '0.4.5';
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const RUNTIME_INDEX = join(PROJECT_ROOT, 'runtime', 'index.js');
 
@@ -34,6 +34,9 @@ Usage:
   future test [pattern]             Run *.test.future files
   future ast <file.future>          Print the AST as JSON
   future new <name>                 Create a new project
+  future demo                       List bundled demo programs
+  future demo <name>                Run a bundled demo (e.g. future demo dashboard)
+  future demo --copy                Copy all demos to ./examples/ in current directory
   future check <file.future>        Check for syntax errors
   future fmt <file.future>          Format source code in-place
   future playground                 Launch the interactive playground
@@ -65,6 +68,7 @@ async function main(argv) {
     case 'test':       return cmdTest(arg);
     case 'ast':        return cmdAst(arg, { pretty });
     case 'new':        return cmdNew(arg);
+    case 'demo':       return cmdDemo(arg);
     case 'check':      return cmdCheck(arg);
     case 'fmt':        return cmdFmt(arg);
     case 'playground': return cmdPlayground();
@@ -465,6 +469,61 @@ function cmdNew(name) {
   console.log(`  ${name}/main.future`);
   console.log(`\nRun it with: future run ${name}/main.future`);
   return 0;
+}
+
+function cmdDemo(arg) {
+  const demosDir = join(PROJECT_ROOT, 'examples');
+  if (!existsSync(demosDir)) {
+    process.stderr.write('error: examples directory not found in package\n');
+    return 1;
+  }
+
+  const demoFiles = readdirSync(demosDir)
+    .filter((f) => f.endsWith('.future'))
+    .sort();
+
+  // --copy: copy all demos to ./examples/ in current working directory
+  if (arg === '--copy') {
+    const dest = resolve('examples');
+    mkdirSync(dest, { recursive: true });
+    for (const f of demoFiles) {
+      const src = readFileSync(join(demosDir, f), 'utf8');
+      writeFileSync(join(dest, f), src, 'utf8');
+    }
+    // Copy README too if present
+    const readmeSrc = join(demosDir, 'README.md');
+    if (existsSync(readmeSrc)) {
+      writeFileSync(join(dest, 'README.md'), readFileSync(readmeSrc, 'utf8'), 'utf8');
+    }
+    console.log(`Copied ${demoFiles.length} demos to examples/`);
+    for (const f of demoFiles) console.log(`  examples/${f}`);
+    console.log('\nRun with: future run examples/<name>.future');
+    return 0;
+  }
+
+  // No arg: list available demos
+  if (!arg) {
+    console.log(`Future ${VERSION} — bundled demos\n`);
+    for (const f of demoFiles) {
+      const firstLine = readFileSync(join(demosDir, f), 'utf8')
+        .split('\n')
+        .find((l) => l.startsWith('#') && l.length > 1) ?? '';
+      const desc = firstLine.replace(/^#\s*/, '');
+      console.log(`  future demo ${f.replace('.future', '').padEnd(20)} ${desc}`);
+    }
+    console.log('\nCopy all to current directory: future demo --copy');
+    return 0;
+  }
+
+  // Run a named demo
+  const name = arg.endsWith('.future') ? arg : `${arg}.future`;
+  const demoPath = join(demosDir, name);
+  if (!existsSync(demoPath)) {
+    const names = demoFiles.map((f) => f.replace('.future', '')).join(', ');
+    process.stderr.write(`error: demo '${arg}' not found\nAvailable: ${names}\n`);
+    return 1;
+  }
+  return cmdRun(demoPath);
 }
 
 /** Launch the interactive playground. */

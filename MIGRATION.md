@@ -4,7 +4,24 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.4.3 → v0.4.4 (current — Examples & VS Code extension)
+## v0.4.4 → v0.4.5 (current — `future demo` command)
+
+**No breaking changes.**
+
+### New CLI command: `future demo`
+
+Run bundled examples directly from anywhere, no need to navigate to the package folder:
+
+```bash
+future demo                  # list all available demos
+future demo dashboard        # run the dashboard demo
+future demo crypto-tracker   # run the crypto tracker
+future demo --copy           # copy all demos to ./examples/ in current directory
+```
+
+---
+
+## v0.4.3 → v0.4.4 (Examples & VS Code extension)
 
 **No breaking changes.**
 

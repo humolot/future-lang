@@ -275,6 +275,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | CLI: `future compile --sourcemap` | ✅ | Emits Source Map v3 `.js.map` |
 | CLI: `future run --debug` | ✅ | Per-call timing via `FUTURE_DEBUG=1` |
 | CLI: `future test` | ✅ | Test runner for `*.test.future` files |
+| CLI: `future demo` | ✅ | List/run/copy bundled demo programs |
 | CLI: `future new` | ✅ | Project scaffold |
 | CLI: `future check` | ✅ | Syntax-check without running |
 | CLI: `future fmt` | ✅ | Auto-formatter |
