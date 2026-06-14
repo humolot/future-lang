@@ -73,6 +73,40 @@ export async function stream(promptOrMessages, onChunk, opts = {}) {
 }
 
 /**
+ * Like ask(), but returns a structured result object instead of a plain string.
+ * Includes the generated text, model used, provider name, and token counts.
+ *
+ * @param {string|Array} prompt  String prompt or messages array
+ * @param {{ temperature?: number, max_tokens?: number, model?: string, system?: string }} [opts]
+ * @returns {Promise<{ text: string, model: string, provider: string, tokens: { input: number, output: number, total: number } }>}
+ */
+export async function complete(prompt, opts = {}) {
+  const messages = Array.isArray(prompt)
+    ? prompt
+    : [{ role: 'user', content: String(prompt) }];
+  const provider = resolveProvider();
+  if (!provider) {
+    return {
+      text:     offlineStub(messages),
+      model:    'none',
+      provider: 'offline',
+      tokens:   { input: 0, output: 0, total: 0 },
+    };
+  }
+  if (typeof provider.complete === 'function') {
+    return provider.complete(messages, opts);
+  }
+  // Fallback for providers that don't implement complete() yet.
+  const text = await provider.chat(messages, opts);
+  return {
+    text,
+    model:    opts.model ?? 'unknown',
+    provider: provider.name,
+    tokens:   { input: 0, output: 0, total: 0 },
+  };
+}
+
+/**
  * Generate a vector embedding for a piece of text.
  * With OpenAI/Ollama providers, returns real semantic embeddings.
  * With Anthropic (no public embed API) or offline, returns keyword-based vectors.

@@ -22,7 +22,7 @@ import { format } from './formatter.js';
 import { FutureError } from './errors.js';
 import { buildSourceMap } from './sourcemap.js';
 
-const VERSION = '0.4.1';
+const VERSION = '0.4.2';
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const RUNTIME_INDEX = join(PROJECT_ROOT, 'runtime', 'index.js');
 
@@ -32,13 +32,14 @@ Usage:
   future run <file.future>          Compile and run a program
   future compile <file.future>      Compile to JavaScript (<file>.js)
   future test [pattern]             Run *.test.future files
-  future new <name>                  Create a new project
+  future ast <file.future>          Print the AST as JSON
+  future new <name>                 Create a new project
   future check <file.future>        Check for syntax errors
   future fmt <file.future>          Format source code in-place
-  future playground                  Launch the interactive playground
-  future doctor                      Check your environment
-  future help                        Show this help
-  future --version                   Show the version
+  future playground                 Launch the interactive playground
+  future doctor                     Check your environment
+  future help                       Show this help
+  future --version                  Show the version
 
 Import system:
   use "./utils.future"              Import all functions from a file
@@ -48,18 +49,21 @@ Import system:
 Flags:
   future run --debug <file>         Show timing for every namespace call
   future compile --sourcemap <file> Also emit a .js.map source map
+  future ast --pretty <file>        Indented JSON output
 `;
 
 async function main(argv) {
   const debug     = argv.includes('--debug');
   const sourcemap = argv.includes('--sourcemap');
+  const pretty    = argv.includes('--pretty');
   if (debug) process.env.FUTURE_DEBUG = '1';
-  const rest = argv.filter((a) => a !== '--debug' && a !== '--sourcemap');
+  const rest = argv.filter((a) => a !== '--debug' && a !== '--sourcemap' && a !== '--pretty');
   const [command, arg] = rest;
   switch (command) {
     case 'run':        return cmdRun(arg);
     case 'compile':    return cmdCompile(arg, { sourcemap });
     case 'test':       return cmdTest(arg);
+    case 'ast':        return cmdAst(arg, { pretty });
     case 'new':        return cmdNew(arg);
     case 'check':      return cmdCheck(arg);
     case 'fmt':        return cmdFmt(arg);
@@ -343,6 +347,23 @@ function cmdFmt(file) {
     console.log(`${file} — formatted`);
   }
   return 0;
+}
+
+/** Output the AST of a .future file as JSON. */
+function cmdAst(file, { pretty = false } = {}) {
+  let path, source;
+  try { ({ path, source } = readSource(file)); }
+  catch (err) { return fail(err, file); }
+
+  try {
+    const tokens = tokenize(source);
+    const ast    = parse(tokens);
+    process.stdout.write((pretty ? JSON.stringify(ast, null, 2) : JSON.stringify(ast)) + '\n');
+    return 0;
+  } catch (err) {
+    if (err instanceof FutureError) { reportFutureError(err, source, file); return 1; }
+    throw err;
+  }
 }
 
 /** Recursively collect .future files matching a pattern or default test globs. */

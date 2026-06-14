@@ -4,6 +4,19 @@ Future is a small language that compiles to JavaScript. It does NOT exist in you
 
 ---
 
+## Capability layers
+
+| Layer | Namespaces | Notes |
+|-------|-----------|-------|
+| **Core language** | *(none)* | variables, if/end, for/end, while/end, try/catch/end, functions, lists, objects, strings |
+| **Standard** | `math` `http` `memory` `system` `schedule` | General-purpose I/O; triggers async mode |
+| **Extended** | `ai` `rag` `vision` `mqtt` `tts` `home` `device` `agent` | AI, IoT, automation; triggers async mode |
+| **Testing** | `assert` | Use only in `*.test.future` files |
+
+Any call from Standard or Extended triggers ASYNC mode automatically.
+
+---
+
 ## Reserved words
 
 ```
@@ -176,9 +189,16 @@ embed   = ai.embed("text to embed")
 ai.configure("openai", "sk-...")
 ai.configure("ollama")
 
-# With options: temperature and max_tokens
+# With inference options
 answer = ai.ask("Explain quantum physics", { temperature: 0.2  max_tokens: 200 })
 reply  = ai.chat(messages, { model: "gpt-4o"  temperature: 0.7 })
+
+# Structured response: text + token counts + model + provider
+result = ai.complete("Summarise this in one line.")
+print result.text
+print result.tokens.total   # total tokens used
+print result.model          # e.g. "claude-sonnet-4-6"
+print result.provider       # e.g. "anthropic"
 
 stream ai.ask("Tell me a story")
     print chunk

@@ -83,8 +83,14 @@ export const manifest = {
     },
     ask: {
       description: 'Ask an AI model a question and get a text response',
-      params: [{ name: 'prompt', type: 'string' }],
+      params: [{ name: 'prompt', type: 'string' }, { name: 'opts', type: 'object', optional: true }],
       returns: 'string',
+      async: true,
+    },
+    complete: {
+      description: 'Like ask(), but returns a structured object: { text, model, provider, tokens: { input, output, total } }',
+      params: [{ name: 'prompt', type: 'string|array' }, { name: 'opts', type: 'object', optional: true }],
+      returns: '{ text: string, model: string, provider: string, tokens: { input: number, output: number, total: number } }',
       async: true,
     },
     chat: {
@@ -434,7 +440,7 @@ runtime.listFunctions = (mod) => {
  * Suitable for AI agent discovery or documentation generation.
  */
 runtime.describe = () => ({
-  version: '0.4.1',
+  version: '0.4.2',
   modules: [...MODULE_NAMES],
   manifest,
 });

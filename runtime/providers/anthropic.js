@@ -77,11 +77,42 @@ export function create(config) {
     }
   }
 
+  async function complete(messages, opts = {}) {
+    const model      = opts.model      ?? defaultModel;
+    const max_tokens = opts.max_tokens ?? 1024;
+    const body       = { model, max_tokens, messages };
+    if (opts.temperature != null) body.temperature = opts.temperature;
+    if (opts.system)              body.system      = opts.system;
+
+    const res = await fetch(`${BASE}/messages`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      let errBody;
+      try { errBody = await res.json(); } catch { errBody = await res.text(); }
+      throw new AiError(res.status, 'anthropic', errBody);
+    }
+    const data = await res.json();
+    const text = (data.content ?? []).map((b) => b.text ?? '').join('').trim();
+    return {
+      text,
+      model: data.model ?? model,
+      provider: 'anthropic',
+      tokens: {
+        input:  data.usage?.input_tokens  ?? 0,
+        output: data.usage?.output_tokens ?? 0,
+        total:  (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
+      },
+    };
+  }
+
   async function embed(text) {
     // Anthropic has no public embeddings endpoint — use keyword vector fallback.
     // For production semantic search, configure an OpenAI-compatible provider with an embed model.
     return keywordVector(String(text));
   }
 
-  return { name: 'anthropic', ask, chat, stream, embed };
+  return { name: 'anthropic', ask, chat, complete, stream, embed };
 }

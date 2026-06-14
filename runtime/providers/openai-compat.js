@@ -81,6 +81,36 @@ export function create(config) {
     }
   }
 
+  async function complete(messages, opts = {}) {
+    const model      = opts.model      ?? defaultModel;
+    const max_tokens = opts.max_tokens ?? 1024;
+    const body       = { model, messages, max_tokens };
+    if (opts.temperature != null) body.temperature = opts.temperature;
+
+    const res = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      let errBody;
+      try { errBody = await res.json(); } catch { errBody = await res.text(); }
+      throw new AiError(res.status, providerTag, errBody);
+    }
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content?.trim() ?? '';
+    return {
+      text,
+      model: data.model ?? model,
+      provider: providerTag,
+      tokens: {
+        input:  data.usage?.prompt_tokens     ?? 0,
+        output: data.usage?.completion_tokens ?? 0,
+        total:  data.usage?.total_tokens      ?? 0,
+      },
+    };
+  }
+
   async function embed(text) {
     if (!embedModel) return keywordVector(String(text));
     try {
@@ -97,5 +127,5 @@ export function create(config) {
     }
   }
 
-  return { name: providerTag, ask, chat, stream, embed };
+  return { name: providerTag, ask, chat, complete, stream, embed };
 }

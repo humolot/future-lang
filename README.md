@@ -164,6 +164,18 @@ In the browser this uses `window.prompt()`. In a Node.js CLI program it reads fr
 
 Future programs talk to the outside world through **namespace calls**. The compiler detects them and automatically switches the program to async mode — you never write `async` or `await`.
 
+### Capability layers
+
+Future organises its built-ins into three layers. You only need to know the layer you're using.
+
+| Layer | What it includes | Typical use |
+|-------|-----------------|-------------|
+| **Core language** | variables, functions, `if/else/end`, `for`, `while`, `try/catch`, lists, objects, string interpolation | Any program — no external calls |
+| **Standard capabilities** | `math`, `http`, `memory`, `system`, `schedule` | General-purpose programs with I/O |
+| **Extended modules** | `ai`, `rag`, `vision`, `mqtt`, `tts`, `home`, `device`, `agent`, `assert` | AI, IoT, and automation programs |
+
+Any call from Standard or Extended triggers async mode — the compiler handles it automatically.
+
 ```future
 # HTTP
 todo = http.get("https://jsonplaceholder.typicode.com/todos/1")
@@ -223,7 +235,16 @@ print answer
 # With inference options
 precise = ai.ask("List the planets.", { temperature: 0.1  max_tokens: 150 })
 creative = ai.chat(messages, { temperature: 0.9  model: "gpt-4o" })
+
+# Structured response — text + token counts + model + provider
+result = ai.complete("Explain recursion in one sentence.")
+print result.text
+print "Tokens used: {result.tokens.total}"
+print "Model: {result.model}"
+print "Provider: {result.provider}"
 ```
+
+`ai.ask()` returns a plain string. `ai.complete()` returns `{ text, model, provider, tokens: { input, output, total } }` — useful when you need to track costs or log which model answered.
 
 ## HTTP configuration
 
@@ -377,6 +398,8 @@ future compile program.future            # compile to JavaScript
 future compile --sourcemap program.future  # compile + emit .js.map
 future test                              # run all *.test.future files
 future test myfeature                    # run matching test files
+future ast program.future                # print the AST as JSON
+future ast --pretty program.future       # indented JSON
 future check program.future              # syntax check only
 future fmt program.future                # format source in-place
 future playground                        # launch the interactive playground
