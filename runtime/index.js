@@ -16,15 +16,16 @@ import * as schedule from './schedule.js';
 import * as system   from './system.js';
 import * as device   from './device.js';
 import * as math     from './math.js';
+import * as assert   from './assert.js';
 import readline from 'node:readline';
 
 // Canonical ordered list of capability module names.
 const MODULE_NAMES = [
   'ai', 'http', 'mqtt', 'tts', 'rag', 'vision', 'home',
-  'memory', 'schedule', 'system', 'device', 'math',
+  'memory', 'schedule', 'system', 'device', 'math', 'assert',
 ];
 
-const _base = { ai, http, mqtt, tts, rag, vision, home, memory, schedule, system, device, math };
+const _base = { ai, http, mqtt, tts, rag, vision, home, memory, schedule, system, device, math, assert };
 
 /**
  * When FUTURE_DEBUG=1, wrap every namespace method with timing/logging.
@@ -406,6 +407,14 @@ export const manifest = {
     pi:     { description: 'The mathematical constant π',     params: [], returns: 'number', async: false },
     e:      { description: "Euler's number",                  params: [], returns: 'number', async: false },
   },
+
+  assert: {
+    ok:        { description: 'Assert that value is truthy',                    params: [{ name: 'value', type: 'any' }, { name: 'msg', type: 'string', optional: true }], returns: 'void', async: false },
+    equal:     { description: 'Assert that actual === expected',                params: [{ name: 'actual', type: 'any' }, { name: 'expected', type: 'any' }, { name: 'msg', type: 'string', optional: true }], returns: 'void', async: false },
+    notEqual:  { description: 'Assert that actual !== expected',                params: [{ name: 'actual', type: 'any' }, { name: 'expected', type: 'any' }, { name: 'msg', type: 'string', optional: true }], returns: 'void', async: false },
+    deepEqual: { description: 'Assert deep structural equality',                params: [{ name: 'actual', type: 'any' }, { name: 'expected', type: 'any' }, { name: 'msg', type: 'string', optional: true }], returns: 'void', async: false },
+    fail:      { description: 'Unconditionally fail the test with a message',   params: [{ name: 'msg', type: 'string', optional: true }], returns: 'void', async: false },
+  },
 };
 
 // --- Introspection API ---
@@ -425,7 +434,7 @@ runtime.listFunctions = (mod) => {
  * Suitable for AI agent discovery or documentation generation.
  */
 runtime.describe = () => ({
-  version: '0.4.0',
+  version: '0.4.1',
   modules: [...MODULE_NAMES],
   manifest,
 });

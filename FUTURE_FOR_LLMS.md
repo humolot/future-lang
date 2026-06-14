@@ -14,7 +14,7 @@ agent  use  as
 
 Reserved namespaces (cannot be reassigned or used as function names):
 ```
-ai  http  mqtt  tts  rag  vision  home  memory  schedule  system  device  math
+ai  http  mqtt  tts  rag  vision  home  memory  schedule  system  device  math  assert
 ```
 
 ---
@@ -176,6 +176,10 @@ embed   = ai.embed("text to embed")
 ai.configure("openai", "sk-...")
 ai.configure("ollama")
 
+# With options: temperature and max_tokens
+answer = ai.ask("Explain quantum physics", { temperature: 0.2  max_tokens: 200 })
+reply  = ai.chat(messages, { model: "gpt-4o"  temperature: 0.7 })
+
 stream ai.ask("Tell me a story")
     print chunk
 end
@@ -224,7 +228,36 @@ end
 # schedule.once and schedule.cron also available
 ```
 
-### `http`, `system`, `rag`, `vision`, `home`, `device`
+### `http`
+```
+data = http.get("https://api.example.com/todos/1")
+print data.title
+
+res = http.post("https://api.example.com/items", { name: "Widget"  price: 9.99 })
+print res.id
+
+# Global config (call once at the top of your program)
+http.configure({ headers: { Authorization: "Bearer {token}" }  timeout: 5000 })
+
+# Errors have .status, .code, .url, .body properties
+try
+    data = http.get("https://api.example.com/private")
+catch err
+    print "Status: {err.status}"
+    print "Code: {err.code}"
+end
+```
+
+### `assert` (use in *.test.future files)
+```
+assert.ok(value)
+assert.equal(actual, expected)
+assert.notEqual(a, b)
+assert.deepEqual(obj1, obj2)
+assert.fail("custom message")
+```
+
+### `system`, `rag`, `vision`, `home`, `device`
 See [README.md](README.md) for full API tables.
 
 ### `math`

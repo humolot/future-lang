@@ -1,6 +1,6 @@
 {
   "name": "future-lang",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Future — a small programming language that transpiles to JavaScript, with a capability runtime (HTTP/AI/MQTT/TTS).",
   "type": "module",
   "bin": {

@@ -34,31 +34,42 @@ export function configure(baseUrlOrProvider, apiKey, model) {
   });
 }
 
-/** Ask a single question. @returns {Promise<string>} */
-export async function ask(prompt) {
-  return chat([{ role: 'user', content: String(prompt) }]);
+/**
+ * Ask a single question.
+ * @param {string} prompt
+ * @param {{ temperature?: number, max_tokens?: number, model?: string, system?: string }} [opts]
+ * @returns {Promise<string>}
+ */
+export async function ask(prompt, opts = {}) {
+  return chat([{ role: 'user', content: String(prompt) }], opts);
 }
 
-/** Multi-turn chat. messages = [{ role, content }, ...]. @returns {Promise<string>} */
-export async function chat(messages) {
+/**
+ * Multi-turn chat.
+ * @param {Array<{role,content}>} messages
+ * @param {{ temperature?: number, max_tokens?: number, model?: string, system?: string }} [opts]
+ * @returns {Promise<string>}
+ */
+export async function chat(messages, opts = {}) {
   const provider = resolveProvider();
   if (!provider) return offlineStub(messages);
-  return provider.chat(messages);
+  return provider.chat(messages, opts);
 }
 
 /**
  * Stream a response chunk-by-chunk.
  * @param {string|Array} promptOrMessages
- * @param {(chunk: string) => void} onChunk  Called with each text fragment.
+ * @param {(chunk: string) => void} onChunk
+ * @param {{ temperature?: number, max_tokens?: number, model?: string }} [opts]
  * @returns {Promise<void>}
  */
-export async function stream(promptOrMessages, onChunk) {
+export async function stream(promptOrMessages, onChunk, opts = {}) {
   const messages = Array.isArray(promptOrMessages)
     ? promptOrMessages
     : [{ role: 'user', content: String(promptOrMessages) }];
   const provider = resolveProvider();
   if (!provider) { onChunk(offlineStub(messages)); return; }
-  return provider.stream(messages, onChunk);
+  return provider.stream(messages, onChunk, opts);
 }
 
 /**

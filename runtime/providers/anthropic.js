@@ -6,13 +6,26 @@ import { parseSSE, keywordVector } from './util.js';
 
 const BASE = 'https://api.anthropic.com/v1';
 
+export class AiError extends Error {
+  constructor(status, provider, body) {
+    const msg = body?.error?.message ?? body ?? `HTTP ${status}`;
+    super(`[ai:${provider}] ${msg}`);
+    this.name = 'AiError';
+    this.status = status;
+    this.code = `AI_HTTP_${status}`;
+    this.namespace = 'ai';
+    this.provider = provider;
+    this.body = body;
+  }
+}
+
 /**
  * Create an Anthropic provider instance.
  * @param {{ apiKey: string, model?: string }} config
  */
 export function create(config) {
-  const key   = config.apiKey;
-  const model = config.model ?? 'claude-sonnet-4-6';
+  const key          = config.apiKey;
+  const defaultModel = config.model ?? 'claude-sonnet-4-6';
 
   const headers = {
     'content-type':      'application/json',
@@ -20,28 +33,43 @@ export function create(config) {
     'anthropic-version': '2023-06-01',
   };
 
-  async function chat(messages) {
+  async function chat(messages, opts = {}) {
+    const model      = opts.model      ?? defaultModel;
+    const max_tokens = opts.max_tokens ?? 1024;
+    const body       = { model, max_tokens, messages };
+    if (opts.temperature != null) body.temperature = opts.temperature;
+    if (opts.system)              body.system      = opts.system;
+
     const res = await fetch(`${BASE}/messages`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ model, max_tokens: 1024, messages }),
+      body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`[anthropic] HTTP ${res.status}: ${await res.text()}`);
+    if (!res.ok) {
+      let errBody;
+      try { errBody = await res.json(); } catch { errBody = await res.text(); }
+      throw new AiError(res.status, 'anthropic', errBody);
+    }
     const data = await res.json();
     return (data.content ?? []).map((b) => b.text ?? '').join('').trim();
   }
 
-  async function ask(prompt) {
-    return chat([{ role: 'user', content: String(prompt) }]);
+  async function ask(prompt, opts = {}) {
+    return chat([{ role: 'user', content: String(prompt) }], opts);
   }
 
-  async function stream(messages, onChunk) {
+  async function stream(messages, onChunk, opts = {}) {
+    const model      = opts.model      ?? defaultModel;
+    const max_tokens = opts.max_tokens ?? 1024;
+    const body       = { model, max_tokens, messages, stream: true };
+    if (opts.temperature != null) body.temperature = opts.temperature;
+
     const res = await fetch(`${BASE}/messages`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ model, max_tokens: 1024, messages, stream: true }),
+      body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`[anthropic] stream HTTP ${res.status}`);
+    if (!res.ok) throw new AiError(res.status, 'anthropic', `stream HTTP ${res.status}`);
     for await (const { event, data } of parseSSE(res.body)) {
       if (event === 'content_block_delta' || data?.type === 'content_block_delta') {
         onChunk(data.delta?.text ?? '');

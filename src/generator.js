@@ -24,6 +24,7 @@ export const NAMESPACES = new Set([
   'rag', 'vision', 'home',              // AI / automation extension points
   'memory', 'schedule', 'system', 'device', // optional new modules
   'math',                               // general-purpose math
+  'assert',                             // test assertions
 ]);
 
 export class Generator {
@@ -36,6 +37,7 @@ export class Generator {
     this.runtimeSpecifier = options.runtimeSpecifier ?? 'future-lang/runtime';
     this.browserMode = options.browserMode ?? false;
     this.isModule = options.isModule ?? false;
+    this.sourceMaps = options.sourceMaps ?? false;
     // Map<importedFuturePath, string[]> — exported names for non-aliased use statements.
     this.importedNames = options.importedNames ?? new Map();
     // Map<importedFuturePath, resolvedJsPath> — path override for `future run` temp files.
@@ -79,7 +81,12 @@ export class Generator {
     }
     for (const stmt of program.body) {
       if (stmt.type === NodeType.UseStatement) continue; // already emitted above
-      lines.push(this.genStatement(stmt, 0, /* topLevel= */ true));
+      const code = this.genStatement(stmt, 0, /* topLevel= */ true);
+      if (this.sourceMaps && stmt.line != null) {
+        lines.push(`/*@FL:${stmt.line}*/${code}`);
+      } else {
+        lines.push(code);
+      }
     }
     return lines.join('\n') + '\n';
   }

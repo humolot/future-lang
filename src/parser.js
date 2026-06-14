@@ -19,7 +19,7 @@ const EXPR_TERMINATORS = new Set(['END', 'ELSE', 'CATCH', 'EOF']);
 /** Built-in namespace names that cannot be redefined by user code. */
 const RESERVED_NAMESPACES = new Set([
   'ai', 'http', 'mqtt', 'tts', 'rag', 'vision', 'home',
-  'memory', 'schedule', 'system', 'device', 'math',
+  'memory', 'schedule', 'system', 'device', 'math', 'assert',
 ]);
 
 export class Parser {
