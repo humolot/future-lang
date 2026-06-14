@@ -24,7 +24,37 @@ const MODULE_NAMES = [
   'memory', 'schedule', 'system', 'device', 'math',
 ];
 
-export const runtime = { ai, http, mqtt, tts, rag, vision, home, memory, schedule, system, device, math };
+const _base = { ai, http, mqtt, tts, rag, vision, home, memory, schedule, system, device, math };
+
+/**
+ * When FUTURE_DEBUG=1, wrap every namespace method with timing/logging.
+ * Non-function properties (constants like math.pi) pass through unchanged.
+ */
+function wrapDebug(base) {
+  const wrapped = {};
+  for (const [ns, mod] of Object.entries(base)) {
+    wrapped[ns] = {};
+    for (const [key, val] of Object.entries(mod)) {
+      if (typeof val !== 'function') { wrapped[ns][key] = val; continue; }
+      wrapped[ns][key] = async (...args) => {
+        const preview = args.length ? String(JSON.stringify(args[0])).slice(0, 60) : '';
+        process.stderr.write(`\x1b[90m[debug] ${ns}.${key}(${preview}) …\x1b[0m\n`);
+        const t = Date.now();
+        try {
+          const result = await val(...args);
+          process.stderr.write(`\x1b[90m[debug] ${ns}.${key} ✓ ${Date.now() - t}ms\x1b[0m\n`);
+          return result;
+        } catch (err) {
+          process.stderr.write(`\x1b[31m[debug] ${ns}.${key} ✗ ${Date.now() - t}ms — ${err.message}\x1b[0m\n`);
+          throw err;
+        }
+      };
+    }
+  }
+  return wrapped;
+}
+
+export const runtime = process.env.FUTURE_DEBUG === '1' ? wrapDebug(_base) : _base;
 
 // input(prompt) — reads a line from stdin (CLI programs).
 runtime.input = async (prompt = '') => {
@@ -395,7 +425,7 @@ runtime.listFunctions = (mod) => {
  * Suitable for AI agent discovery or documentation generation.
  */
 runtime.describe = () => ({
-  version: '0.2.0',
+  version: '0.4.0',
   modules: [...MODULE_NAMES],
   manifest,
 });

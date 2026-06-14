@@ -31,6 +31,8 @@ export function compile(source, options = {}) {
   if (options.resolveSource) {
     for (const stmt of ast.body) {
       if (stmt.type !== 'UseStatement' || stmt.alias) continue;
+      // Skip npm module imports — no source to resolve.
+      if (!stmt.path.startsWith('./') && !stmt.path.startsWith('../')) continue;
       try {
         const importedSrc = options.resolveSource(stmt.path);
         if (importedSrc) {

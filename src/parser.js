@@ -16,6 +16,12 @@ import * as AST from './ast.js';
  */
 const EXPR_TERMINATORS = new Set(['END', 'ELSE', 'CATCH', 'EOF']);
 
+/** Built-in namespace names that cannot be redefined by user code. */
+const RESERVED_NAMESPACES = new Set([
+  'ai', 'http', 'mqtt', 'tts', 'rag', 'vision', 'home',
+  'memory', 'schedule', 'system', 'device', 'math',
+]);
+
 export class Parser {
   /** @param {import('./lexer.js').Token[]} tokens */
   constructor(tokens) {
@@ -113,27 +119,51 @@ export class Parser {
 
   parseAssignment() {
     const name = this.advance(); // IDENTIFIER
+    if (RESERVED_NAMESPACES.has(name.value)) {
+      throw new FutureError(
+        `'${name.value}' is a reserved namespace and cannot be reassigned`,
+        name.line, name.column, 'parse',
+      );
+    }
     this.expect('ASSIGN', "'='");
     const value = this.parseExpression();
     return AST.Assignment(name.value, value, name.line, name.column);
   }
 
-  parseIf() {
+  /**
+   * `if cond ... [else if cond ...]* [else ...] end`
+   * @param {boolean} isChained  True when parsing an `else if` branch — the
+   *   outer `if` owns the single `end`, so this call must NOT consume it.
+   */
+  parseIf(isChained = false) {
     const kw = this.advance(); // IF
     const condition = this.parseExpression();
-    const consequent = this.parseBlock(['ELSE', 'END']);
+    const consequent = this.parseBlock(['ELSE', 'END'], 'if');
     let alternate = null;
     if (this.check('ELSE')) {
-      this.advance();
-      alternate = this.parseBlock(['END']);
+      this.advance(); // ELSE
+      if (this.check('IF')) {
+        // else if — recurse; the chained call skips its own `end`
+        alternate = [this.parseIf(true)];
+      } else {
+        alternate = this.parseBlock(['END'], 'else');
+      }
     }
-    this.expect('END', "'end'");
+    if (!isChained) {
+      this.expect('END', "'end' to close 'if'");
+    }
     return AST.IfStatement(condition, consequent, alternate, kw.line, kw.column);
   }
 
   parseFunction() {
     const kw = this.advance(); // FUNCTION
     const name = this.expect('IDENTIFIER', 'function name');
+    if (RESERVED_NAMESPACES.has(name.value)) {
+      throw new FutureError(
+        `'${name.value}' is a reserved namespace and cannot be used as a function name`,
+        name.line, name.column, 'parse',
+      );
+    }
     this.expect('LPAREN', "'('");
     const params = [];
     if (!this.check('RPAREN')) {
@@ -142,8 +172,8 @@ export class Parser {
       } while (this.match('COMMA'));
     }
     this.expect('RPAREN', "')'");
-    const body = this.parseBlock(['END']);
-    this.expect('END', "'end'");
+    const body = this.parseBlock(['END'], 'function');
+    this.expect('END', "'end' to close 'function'");
     return AST.FunctionDeclaration(name.value, params, body, kw.line, kw.column);
   }
 
@@ -169,8 +199,8 @@ export class Parser {
     const variable = this.expect('IDENTIFIER', 'loop variable name');
     this.expect('IN', "'in'");
     const iterable = this.parseExpression();
-    const body     = this.parseBlock(['END']);
-    this.expect('END', "'end'");
+    const body     = this.parseBlock(['END'], 'for');
+    this.expect('END', "'end' to close 'for'");
     return AST.ForStatement(variable.value, iterable, body, kw.line, kw.column);
   }
 
@@ -179,11 +209,11 @@ export class Parser {
    */
   parseTry() {
     const kw      = this.advance(); // TRY
-    const body    = this.parseBlock(['CATCH']);
-    this.expect('CATCH', "'catch'");
+    const body    = this.parseBlock(['CATCH'], 'try');
+    this.expect('CATCH', "'catch' after 'try' block");
     const errVar  = this.expect('IDENTIFIER', 'error variable name');
-    const catchBody = this.parseBlock(['END']);
-    this.expect('END', "'end'");
+    const catchBody = this.parseBlock(['END'], 'catch');
+    this.expect('END', "'end' to close 'try'");
     return AST.TryStatement(body, errVar.value, catchBody, kw.line, kw.column);
   }
 
@@ -211,7 +241,7 @@ export class Parser {
         body.push(this.parseStatement());
       }
     }
-    this.expect('END', "'end'");
+    this.expect('END', "'end' to close 'agent'");
     return AST.AgentDeclaration(name.value, capabilities, body, kw.line, kw.column);
   }
 
@@ -221,8 +251,8 @@ export class Parser {
   parseWhile() {
     const kw = this.advance(); // WHILE
     const condition = this.parseExpression();
-    const body = this.parseBlock(['END']);
-    this.expect('END', "'end'");
+    const body = this.parseBlock(['END'], 'while');
+    this.expect('END', "'end' to close 'while'");
     return AST.WhileStatement(condition, body, kw.line, kw.column);
   }
 
@@ -235,8 +265,8 @@ export class Parser {
   parseStream() {
     const kw = this.advance(); // STREAM
     const call = this.parseExpression();
-    const body = this.parseBlock(['END']);
-    this.expect('END', "'end'");
+    const body = this.parseBlock(['END'], 'stream');
+    this.expect('END', "'end' to close 'stream'");
     return AST.StreamStatement(call, body, kw.line, kw.column);
   }
 
@@ -249,8 +279,8 @@ export class Parser {
     const kw = this.advance(); // ON
     const source = this.expect('IDENTIFIER', 'event source name (e.g. mqtt)');
     const channel = this.parseExpression();
-    const body = this.parseBlock(['END']);
-    this.expect('END', "'end'");
+    const body = this.parseBlock(['END'], 'on');
+    this.expect('END', "'end' to close 'on'");
     return AST.OnStatement(source.value, channel, body, kw.line, kw.column);
   }
 
@@ -262,8 +292,8 @@ export class Parser {
   parseEvery() {
     const kw = this.advance(); // EVERY
     const interval = this.parseExpression();
-    const body = this.parseBlock(['END']);
-    this.expect('END', "'end'");
+    const body = this.parseBlock(['END'], 'every');
+    this.expect('END', "'end' to close 'every'");
     return AST.EveryStatement(interval, body, kw.line, kw.column);
   }
 
@@ -271,7 +301,7 @@ export class Parser {
    * Collect statements until one of `terminators` (or EOF) is next.
    * Throws if EOF is reached before a terminator (e.g. a missing `end`).
    */
-  parseBlock(terminators) {
+  parseBlock(terminators, openedBy = null) {
     const statements = [];
     while (!this.check('EOF') && !terminators.includes(this.peek().type)) {
       statements.push(this.parseStatement());
@@ -279,8 +309,9 @@ export class Parser {
     if (this.check('EOF')) {
       const tok = this.peek();
       const expected = terminators.map((t) => `'${t.toLowerCase()}'`).join(' or ');
+      const hint = openedBy ? ` to close '${openedBy}'` : '';
       throw new FutureError(
-        `Unexpected end of file, expected ${expected}`,
+        `Unexpected end of file — expected ${expected}${hint}`,
         tok.line, tok.column, 'parse',
       );
     }

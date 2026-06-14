@@ -21,7 +21,7 @@ import { compile, tokenize, parse } from './index.js';
 import { format } from './formatter.js';
 import { FutureError } from './errors.js';
 
-const VERSION = '0.3.2';
+const VERSION = '0.4.0';
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const RUNTIME_INDEX = join(PROJECT_ROOT, 'runtime', 'index.js');
 
@@ -41,10 +41,17 @@ Usage:
 Import system:
   use "./utils.future"              Import all functions from a file
   use "./math.future" as math       Import as a namespace (math.add, math.pi …)
+  use "lodash" as _                 Import an npm package as a namespace
+
+Flags:
+  future run --debug <file>         Show timing for every namespace call
 `;
 
 async function main(argv) {
-  const [command, arg] = argv;
+  const debug = argv.includes('--debug');
+  if (debug) process.env.FUTURE_DEBUG = '1';
+  const rest = argv.filter((a) => a !== '--debug');
+  const [command, arg] = rest;
   switch (command) {
     case 'run':        return cmdRun(arg);
     case 'compile':    return cmdCompile(arg);
@@ -138,6 +145,7 @@ function compileDepsToTemp(sourcePath, sourceText, tempDir, pathMap = new Map())
   const uses = findUseStatements(sourceText);
   for (const { path: relPath } of uses) {
     if (pathMap.has(relPath)) continue; // already compiled
+    if (!relPath.startsWith('./') && !relPath.startsWith('../')) continue; // npm module
     const depAbsPath = resolve(dirname(sourcePath), relPath);
     if (!existsSync(depAbsPath)) continue;
     const depSource = readFileSync(depAbsPath, 'utf8');
@@ -163,6 +171,7 @@ function compileDepModule(source, sourcePath, tempDir, pathMap) {
   // Ensure transitive deps are compiled first so pathMap is populated.
   for (const { path: relPath } of uses) {
     if (pathMap.has(relPath)) continue;
+    if (!relPath.startsWith('./') && !relPath.startsWith('../')) continue; // npm module
     const depAbsPath = resolve(dirname(sourcePath), relPath);
     if (!existsSync(depAbsPath)) continue;
     const depSrc = readFileSync(depAbsPath, 'utf8');
@@ -199,6 +208,7 @@ function cmdCompile(file) {
   // Compile each imported .future dep as a module next to its source.
   const uses = findUseStatements(source);
   for (const { path: relPath } of uses) {
+    if (!relPath.startsWith('./') && !relPath.startsWith('../')) continue; // npm module
     const depAbsPath = resolve(outDir, relPath);
     if (!existsSync(depAbsPath)) {
       process.stderr.write(`warning: imported file not found: ${relPath}\n`);

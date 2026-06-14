@@ -62,6 +62,12 @@ export class Generator {
       lines.push('');
     }
 
+    // __safe wraps async event handlers so errors are logged instead of crashing silently.
+    if (usesHandlers(program)) {
+      lines.push('const __safe = (ns, fn) => async (...a) => { try { return await fn(...a); } catch (e) { console.error(`[future:${ns}]`, e.message); } };');
+      lines.push('');
+    }
+
     // Emit __len helper only when len() is actually used — keeps simple programs clean.
     if (usesBuiltin(program, 'len')) {
       lines.push('function __len(x) { return x == null ? 0 : (x.length ?? Object.keys(x).length); }');
@@ -80,10 +86,16 @@ export class Generator {
 
   /** Emit an ES `import` for a `use` statement. */
   genUseStatement(node) {
-    const jsPath = node.path.replace(/\.future$/, '.js');
+    const isRelative = node.path.startsWith('./') || node.path.startsWith('../');
+    const jsPath  = isRelative ? node.path.replace(/\.future$/, '.js') : node.path;
     const resolved = this.pathMap.get(node.path) ?? jsPath;
+
     if (node.alias) {
       return `import * as ${node.alias} from ${JSON.stringify(resolved)};`;
+    }
+    if (!isRelative) {
+      // npm module without alias — side-effect import
+      return `import ${JSON.stringify(resolved)};`;
     }
     const names = this.importedNames.get(node.path) ?? [];
     if (names.length > 0) {
@@ -111,7 +123,13 @@ export class Generator {
         out += this.genBody(node.consequent, depth + 1);
         out += `\n${pad}}`;
         if (node.alternate) {
-          out += ` else {\n${this.genBody(node.alternate, depth + 1)}\n${pad}}`;
+          // Single chained IfStatement → `else if (...)` without extra braces.
+          if (node.alternate.length === 1 && node.alternate[0].type === NodeType.IfStatement) {
+            const elseIf = this.genStatement(node.alternate[0], depth);
+            out += ` else ${elseIf.trimStart()}`;
+          } else {
+            out += ` else {\n${this.genBody(node.alternate, depth + 1)}\n${pad}}`;
+          }
         }
         return out;
       }
@@ -172,7 +190,7 @@ export class Generator {
         const args = call.arguments.map((a) => this.genExpression(a)).join(', ');
         const sep  = args ? ', ' : '';
         const inner = this.genBody(node.body, depth + 1);
-        return `${pad}await __rt.${ns}.stream(${args}${sep}async (chunk) => {\n${inner}\n${pad}});`;
+        return `${pad}await __rt.${ns}.stream(${args}${sep}__safe("stream", async (chunk) => {\n${inner}\n${pad}}));`;
       }
 
       case NodeType.TryStatement: {
@@ -201,18 +219,19 @@ export class Generator {
 
       case NodeType.OnStatement: {
         // `on mqtt "topic" ... end`
-        // Compiles to: await __rt.<source>.subscribe(<channel>, async (message) => { ... })
+        // → await __rt.<source>.subscribe(<channel>, __safe("<source>", async (message) => { ... }))
         const inner = this.genBody(node.body, depth + 1);
         const chan  = this.genExpression(node.channel);
-        return `${pad}await __rt.${node.source}.subscribe(${chan}, async (message) => {\n${inner}\n${pad}});`;
+        const ns    = JSON.stringify(node.source);
+        return `${pad}await __rt.${node.source}.subscribe(${chan}, __safe(${ns}, async (message) => {\n${inner}\n${pad}}));`;
       }
 
       case NodeType.EveryStatement: {
         // `every "30m" ... end`
-        // Compiles to: await __rt.schedule.every(<interval>, async () => { ... })
+        // → await __rt.schedule.every(<interval>, __safe("schedule", async () => { ... }))
         const inner    = this.genBody(node.body, depth + 1);
         const interval = this.genExpression(node.interval);
-        return `${pad}await __rt.schedule.every(${interval}, async () => {\n${inner}\n${pad}});`;
+        return `${pad}await __rt.schedule.every(${interval}, __safe("schedule", async () => {\n${inner}\n${pad}}));`;
       }
 
       default:
@@ -386,6 +405,22 @@ function usesRuntime(node, useAliases = new Set()) {
     } else if (value && typeof value === 'object' && value.type) {
       if (usesRuntime(value, useAliases)) return true;
     }
+  }
+  return false;
+}
+
+/** True if the program has any async event handlers (on/every/stream). */
+function usesHandlers(node) {
+  if (!node || typeof node !== 'object') return false;
+  if (
+    node.type === NodeType.OnStatement ||
+    node.type === NodeType.EveryStatement ||
+    node.type === NodeType.StreamStatement
+  ) return true;
+  for (const key of Object.keys(node)) {
+    const v = node[key];
+    if (Array.isArray(v)) { if (v.some(usesHandlers)) return true; }
+    else if (v && typeof v === 'object' && v.type) { if (usesHandlers(v)) return true; }
   }
   return false;
 }
