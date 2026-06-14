@@ -1,10 +1,18 @@
 // runtime/browser.js — Browser-compatible Future runtime.
 // No Node.js dependencies. Designed to run in any modern browser.
 //
-// Modules fully supported: ai, http, rag, vision, memory, schedule, tts, device, math
-// Modules partially supported: system (open + notify only), home (stub)
+// Modules fully supported: ai, http, rag, vision, memory, schedule, tts, device, math, assert
+// Modules partially supported: system (open + notify + env only), home (via mqtt stub)
 // Modules not available: mqtt (needs WebSocket broker), system.exec/read/write
 // Built-ins: len() (sync), input() (window.prompt), print (overridable)
+//
+// v0.4.2 sync:
+//   - ai.ask/chat/stream accept opts { temperature, max_tokens, model, system }
+//   - ai.complete() → { text, model, provider, tokens: { input, output, total } }
+//   - AiError class with .status, .code, .provider
+//   - http.configure({ headers, timeout }) for global request defaults
+//   - HttpError class with .status, .statusText, .code, .url, .body
+//   - assert namespace: ok, equal, notEqual, deepEqual, fail
 
 // ─── Shared utilities ─────────────────────────────────────────────────────────
 
@@ -48,23 +56,49 @@ async function* parseSSE(body) {
   }
 }
 
+// ─── Error classes ────────────────────────────────────────────────────────────
+
+export class AiError extends Error {
+  constructor(status, provider, body) {
+    const msg = body?.error?.message ?? body ?? `HTTP ${status}`;
+    super(`[ai:${provider}] ${msg}`);
+    this.name = 'AiError';
+    this.status = status;
+    this.code = `AI_HTTP_${status}`;
+    this.namespace = 'ai';
+    this.provider = provider;
+    this.body = body;
+  }
+}
+
+export class HttpError extends Error {
+  constructor(status, statusText, url, body) {
+    super(`HTTP ${status} ${statusText} — ${url}`);
+    this.name = 'HttpError';
+    this.status = status;
+    this.statusText = statusText;
+    this.url = url;
+    this.body = body;
+    this.namespace = 'http';
+    this.code = `HTTP_${status}`;
+  }
+}
+
 // ─── Provider presets ─────────────────────────────────────────────────────────
 
 const PRESETS = {
-  anthropic:  { baseUrl: 'https://api.anthropic.com',                          isAnthropic: true },
-  openai:     { baseUrl: 'https://api.openai.com/v1',                          defaultModel: 'gpt-4o-mini' },
+  anthropic:  { baseUrl: 'https://api.anthropic.com',                               isAnthropic: true,  defaultModel: 'claude-sonnet-4-6' },
+  openai:     { baseUrl: 'https://api.openai.com/v1',                               defaultModel: 'gpt-4o-mini' },
   gemini:     { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', defaultModel: 'gemini-2.0-flash' },
-  ollama:     { baseUrl: 'http://localhost:11434/v1',                          defaultModel: 'llama3' },
-  openrouter: { baseUrl: 'https://openrouter.ai/api/v1',                       defaultModel: 'openai/gpt-4o-mini' },
-  venice:     { baseUrl: 'https://api.venice.ai/api/v1',                       defaultModel: 'llama-3.3-70b' },
-  groq:       { baseUrl: 'https://api.groq.com/openai/v1',                     defaultModel: 'llama-3.3-70b-versatile' },
+  ollama:     { baseUrl: 'http://localhost:11434/v1',                               defaultModel: 'llama3' },
+  openrouter: { baseUrl: 'https://openrouter.ai/api/v1',                            defaultModel: 'openai/gpt-4o-mini' },
+  venice:     { baseUrl: 'https://api.venice.ai/api/v1',                            defaultModel: 'llama-3.3-70b' },
+  groq:       { baseUrl: 'https://api.groq.com/openai/v1',                          defaultModel: 'llama-3.3-70b-versatile' },
 };
 
 // ─── AI module ────────────────────────────────────────────────────────────────
 
 const _aiState = { proxy: null, provider: null, apiKey: null, model: null };
-
-function _resolveAI() { return _aiState; }
 
 async function _proxyPost(path, body) {
   const res = await fetch(`${_aiState.proxy}${path}`, {
@@ -72,44 +106,72 @@ async function _proxyPost(path, body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`Proxy error ${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    let errBody;
+    try { errBody = await res.json(); } catch { errBody = await res.text(); }
+    throw new AiError(res.status, 'proxy', errBody);
+  }
   return res;
 }
 
 function _extractText(data) {
-  // Handles both OpenAI and Anthropic response shapes
   return data.text ?? data.content?.[0]?.text ??
     data.choices?.[0]?.message?.content ?? String(data);
 }
 
-async function _directAsk(messages) {
-  const preset = PRESETS[_aiState.provider ?? 'openai'] ?? PRESETS.openai;
-  const model  = _aiState.model ?? preset.defaultModel ?? 'gpt-4o-mini';
+async function _callAnthropic(messages, opts = {}) {
+  const preset = PRESETS.anthropic;
+  const model      = opts.model      ?? _aiState.model ?? preset.defaultModel;
+  const max_tokens = opts.max_tokens ?? 1024;
+  const body       = { model, max_tokens, messages };
+  if (opts.temperature != null) body.temperature = opts.temperature;
+  if (opts.system)              body.system      = opts.system;
 
-  if (preset.isAnthropic) {
-    const res = await fetch(`${preset.baseUrl}/v1/messages`, {
-      method: 'POST',
-      headers: {
-        'x-api-key': _aiState.apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ model, max_tokens: 1024, messages }),
-    });
-    const data = await res.json();
-    return data.content?.[0]?.text ?? '';
+  const res = await fetch(`${preset.baseUrl}/v1/messages`, {
+    method: 'POST',
+    headers: {
+      'x-api-key': _aiState.apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let errBody;
+    try { errBody = await res.json(); } catch { errBody = await res.text(); }
+    throw new AiError(res.status, 'anthropic', errBody);
   }
+  return res.json();
+}
+
+async function _callOpenAI(messages, opts = {}) {
+  const preset = PRESETS[_aiState.provider ?? 'openai'] ?? PRESETS.openai;
+  const model      = opts.model      ?? _aiState.model ?? preset.defaultModel ?? 'gpt-4o-mini';
+  const max_tokens = opts.max_tokens ?? 1024;
+  const body       = { model, messages, max_tokens };
+  if (opts.temperature != null) body.temperature = opts.temperature;
 
   const res = await fetch(`${preset.baseUrl}/chat/completions`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${_aiState.apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ model, messages }),
+    headers: { 'Authorization': `Bearer ${_aiState.apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   });
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content ?? '';
+  if (!res.ok) {
+    let errBody;
+    try { errBody = await res.json(); } catch { errBody = await res.text(); }
+    throw new AiError(res.status, _aiState.provider ?? 'openai', errBody);
+  }
+  return res.json();
+}
+
+async function _directChat(messages, opts = {}) {
+  const isAnthropic = (PRESETS[_aiState.provider ?? ''] ?? {}).isAnthropic;
+  if (isAnthropic) {
+    const data = await _callAnthropic(messages, opts);
+    return (data.content ?? []).map((b) => b.text ?? '').join('').trim();
+  }
+  const data = await _callOpenAI(messages, opts);
+  return data.choices?.[0]?.message?.content?.trim() ?? '';
 }
 
 export const ai = {
@@ -119,42 +181,129 @@ export const ai = {
     _aiState.model    = model  ?? null;
   },
 
-  async ask(prompt) {
+  async ask(prompt, opts = {}) {
+    const messages = [{ role: 'user', content: String(prompt) }];
     if (_aiState.proxy) {
-      const res  = await _proxyPost('/ask', { prompt: String(prompt) });
+      const res  = await _proxyPost('/ask', { prompt: String(prompt), ...opts });
       const data = await res.json();
       return _extractText(data);
     }
     if (!_aiState.apiKey) throw new Error('AI not configured. Call Future.configure({ proxy: "/api/ai" }) or Future.configure({ provider: "openai", apiKey: "sk-..." })');
-    return _directAsk([{ role: 'user', content: String(prompt) }]);
+    return _directChat(messages, opts);
   },
 
-  async chat(messages) {
+  async chat(messages, opts = {}) {
     if (_aiState.proxy) {
-      const res  = await _proxyPost('/chat', { messages });
+      const res  = await _proxyPost('/chat', { messages, ...opts });
       const data = await res.json();
       return _extractText(data);
     }
-    if (!_aiState.apiKey) throw new Error('AI not configured. Call Future.configure({ proxy: "/api/ai" }) or Future.configure({ provider: "openai", apiKey: "sk-..." })');
-    return _directAsk(messages);
+    if (!_aiState.apiKey) throw new Error('AI not configured.');
+    return _directChat(messages, opts);
   },
 
-  async stream(prompt, onChunk) {
+  async complete(prompt, opts = {}) {
+    const messages = Array.isArray(prompt)
+      ? prompt
+      : [{ role: 'user', content: String(prompt) }];
+
     if (_aiState.proxy) {
-      const res = await _proxyPost('/stream', { prompt: String(prompt) });
+      try {
+        const res  = await _proxyPost('/complete', { prompt: Array.isArray(prompt) ? undefined : String(prompt), messages, ...opts });
+        const data = await res.json();
+        return {
+          text:     _extractText(data),
+          model:    data.model ?? 'proxy',
+          provider: 'proxy',
+          tokens: {
+            input:  data.tokens?.input  ?? data.usage?.input_tokens  ?? data.usage?.prompt_tokens     ?? 0,
+            output: data.tokens?.output ?? data.usage?.output_tokens ?? data.usage?.completion_tokens ?? 0,
+            total:  data.tokens?.total  ?? data.usage?.total_tokens  ?? 0,
+          },
+        };
+      } catch {
+        // Fallback: proxy doesn't have /complete — use /ask
+        const text = await ai.ask(Array.isArray(prompt) ? prompt[0]?.content ?? '' : prompt, opts);
+        return { text, model: 'proxy', provider: 'proxy', tokens: { input: 0, output: 0, total: 0 } };
+      }
+    }
+
+    if (!_aiState.apiKey) {
+      return { text: '[ai offline] No API key configured.', model: 'none', provider: 'offline', tokens: { input: 0, output: 0, total: 0 } };
+    }
+
+    const isAnthropic = (PRESETS[_aiState.provider ?? ''] ?? {}).isAnthropic;
+    if (isAnthropic) {
+      const data = await _callAnthropic(messages, opts);
+      const text = (data.content ?? []).map((b) => b.text ?? '').join('').trim();
+      return {
+        text,
+        model:    data.model ?? _aiState.model ?? PRESETS.anthropic.defaultModel,
+        provider: 'anthropic',
+        tokens: {
+          input:  data.usage?.input_tokens  ?? 0,
+          output: data.usage?.output_tokens ?? 0,
+          total:  (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
+        },
+      };
+    }
+
+    const data = await _callOpenAI(messages, opts);
+    const text = data.choices?.[0]?.message?.content?.trim() ?? '';
+    const preset = PRESETS[_aiState.provider ?? 'openai'] ?? PRESETS.openai;
+    return {
+      text,
+      model:    data.model ?? _aiState.model ?? preset.defaultModel,
+      provider: _aiState.provider ?? 'openai',
+      tokens: {
+        input:  data.usage?.prompt_tokens     ?? 0,
+        output: data.usage?.completion_tokens ?? 0,
+        total:  data.usage?.total_tokens      ?? 0,
+      },
+    };
+  },
+
+  async stream(prompt, onChunk, opts = {}) {
+    if (_aiState.proxy) {
+      const res = await _proxyPost('/stream', { prompt: String(prompt), ...opts });
       for await (const { data } of parseSSE(res.body)) {
         const chunk = data.choices?.[0]?.delta?.content ?? data.delta?.text ?? '';
         if (chunk) await onChunk(chunk);
       }
       return;
     }
-    // Direct streaming (demo mode)
+
+    const messages = Array.isArray(prompt)
+      ? prompt
+      : [{ role: 'user', content: String(prompt) }];
+    const isAnthropic = (PRESETS[_aiState.provider ?? ''] ?? {}).isAnthropic;
+    const model      = opts.model ?? _aiState.model;
+    const max_tokens = opts.max_tokens ?? 1024;
+
+    if (isAnthropic) {
+      const body = { model: model ?? PRESETS.anthropic.defaultModel, max_tokens, messages, stream: true };
+      if (opts.temperature != null) body.temperature = opts.temperature;
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': _aiState.apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      for await (const { event, data } of parseSSE(res.body)) {
+        if (event === 'content_block_delta' || data?.type === 'content_block_delta') {
+          const chunk = data.delta?.text ?? '';
+          if (chunk) await onChunk(chunk);
+        }
+      }
+      return;
+    }
+
     const preset = PRESETS[_aiState.provider ?? 'openai'] ?? PRESETS.openai;
-    const model  = _aiState.model ?? preset.defaultModel ?? 'gpt-4o-mini';
+    const body = { model: model ?? preset.defaultModel ?? 'gpt-4o-mini', messages, max_tokens, stream: true };
+    if (opts.temperature != null) body.temperature = opts.temperature;
     const res = await fetch(`${preset.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${_aiState.apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, stream: true, messages: [{ role: 'user', content: String(prompt) }] }),
+      body: JSON.stringify(body),
     });
     for await (const { data } of parseSSE(res.body)) {
       const chunk = data.choices?.[0]?.delta?.content ?? '';
@@ -185,18 +334,55 @@ export const ai = {
 
 // ─── HTTP module ──────────────────────────────────────────────────────────────
 
+let _httpConfig = { headers: {}, timeout: 0 };
+
+const _HTTP_DEFAULT_HEADERS = {
+  'user-agent': 'future-lang/0.4 (+https://github.com/humolot/future-lang)',
+  accept: 'application/json, text/*;q=0.9, */*;q=0.8',
+};
+
+function _httpSignal() {
+  if (!_httpConfig.timeout) return undefined;
+  return AbortSignal.timeout(_httpConfig.timeout);
+}
+
+async function _parseHttpBody(res) {
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('application/json') ? res.json() : res.text();
+}
+
 export const http = {
-  async get(url, headers = {}) {
-    const res = await fetch(String(url), { headers });
-    return res.headers.get('content-type')?.includes('json') ? res.json() : res.text();
+  configure(opts = {}) {
+    if (opts.headers) _httpConfig.headers = { ..._httpConfig.headers, ...opts.headers };
+    if (opts.timeout != null) _httpConfig.timeout = opts.timeout;
   },
+
+  async get(url, headers = {}) {
+    const res = await fetch(String(url), {
+      headers: { ..._HTTP_DEFAULT_HEADERS, ..._httpConfig.headers, ...headers },
+      signal: _httpSignal(),
+    });
+    if (!res.ok) {
+      let body;
+      try { body = await _parseHttpBody(res); } catch { body = null; }
+      throw new HttpError(res.status, res.statusText, String(url), body);
+    }
+    return _parseHttpBody(res);
+  },
+
   async post(url, body, headers = {}) {
     const res = await fetch(String(url), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...headers },
-      body: JSON.stringify(body),
+      headers: { ..._HTTP_DEFAULT_HEADERS, 'content-type': 'application/json', ..._httpConfig.headers, ...headers },
+      body: typeof body === 'string' ? body : JSON.stringify(body),
+      signal: _httpSignal(),
     });
-    return res.headers.get('content-type')?.includes('json') ? res.json() : res.text();
+    if (!res.ok) {
+      let errBody;
+      try { errBody = await _parseHttpBody(res); } catch { errBody = null; }
+      throw new HttpError(res.status, res.statusText, String(url), errBody);
+    }
+    return _parseHttpBody(res);
   },
 };
 
@@ -343,7 +529,7 @@ function createPipeline(name) {
       const list = Array.isArray(docs) ? docs : [docs];
       let n = 0;
       for (const doc of list) {
-        const text = typeof doc === 'string' ? doc : doc.text ?? doc.content ?? JSON.stringify(doc);
+        const text   = typeof doc === 'string' ? doc : doc.text ?? doc.content ?? JSON.stringify(doc);
         const source = doc.source ?? name;
         for (const [i, c] of chunk(text).entries()) {
           const vec = await ai.embed(c);
@@ -398,16 +584,16 @@ export const device = {
 // ─── MQTT stub ────────────────────────────────────────────────────────────────
 
 export const mqtt = {
-  async publish() { console.warn('[mqtt] not available in browser without a WebSocket broker'); },
+  async publish()   { console.warn('[mqtt] not available in browser without a WebSocket broker'); },
   async subscribe() { console.warn('[mqtt] not available in browser without a WebSocket broker'); },
 };
 
 // ─── Home stub ────────────────────────────────────────────────────────────────
 
 export const home = {
-  async turnOn(d)      { return mqtt.publish(`home/${d}/set`, 'ON'); },
-  async turnOff(d)     { return mqtt.publish(`home/${d}/set`, 'OFF'); },
-  async set(d, value)  { return mqtt.publish(`home/${d}/set`, String(value)); },
+  async turnOn(d)     { return mqtt.publish(`home/${d}/set`, 'ON'); },
+  async turnOff(d)    { return mqtt.publish(`home/${d}/set`, 'OFF'); },
+  async set(d, value) { return mqtt.publish(`home/${d}/set`, String(value)); },
 };
 
 // ─── Math module ─────────────────────────────────────────────────────────────
@@ -425,6 +611,38 @@ export const math = {
   max:    (...args) => Math.max(...args.map(Number)),
   pi:     Math.PI,
   e:      Math.E,
+};
+
+// ─── Assert module (browser-native — no node:assert) ─────────────────────────
+
+function _assertFail(msg, operator, actual, expected) {
+  const err = new Error(msg);
+  err.name     = 'AssertionError';
+  err.namespace = 'assert';
+  err.operator  = operator;
+  err.actual    = actual;
+  err.expected  = expected;
+  throw err;
+}
+
+export const assert = {
+  ok(val, msg) {
+    if (!val) _assertFail(msg ?? `Expected truthy value, got ${JSON.stringify(val)}`, 'ok', val, true);
+  },
+  equal(a, b, msg) {
+    if (a !== b) _assertFail(msg ?? `${JSON.stringify(a)} !== ${JSON.stringify(b)}`, 'equal', a, b);
+  },
+  notEqual(a, b, msg) {
+    if (a === b) _assertFail(msg ?? `Expected values to differ, both are ${JSON.stringify(a)}`, 'notEqual', a, b);
+  },
+  deepEqual(a, b, msg) {
+    if (JSON.stringify(a) !== JSON.stringify(b)) {
+      _assertFail(msg ?? `Expected deep equality`, 'deepEqual', a, b);
+    }
+  },
+  fail(msg = 'assertion failed') {
+    _assertFail(msg, 'fail', undefined, undefined);
+  },
 };
 
 // ─── input() — browser version uses window.prompt ────────────────────────────
@@ -448,10 +666,14 @@ export function print(...args) {
 
 // ─── Combined runtime object ──────────────────────────────────────────────────
 
-export const browserRuntime = { ai, http, memory, schedule, tts, system, vision, rag, device, mqtt, home, math, input, print };
+export const browserRuntime = {
+  ai, http, memory, schedule, tts, system, vision, rag, device, mqtt, home, math, assert,
+  input, print,
+};
 
-// ─── Global proxy configuration ───────────────────────────────────────────────
+// ─── Global proxy / provider configuration ────────────────────────────────────
 // Called by: Future.configure({ proxy: '/api/ai' })
+//         or Future.configure({ provider: 'openai', apiKey: 'sk-...' })
 
 export function setProxy(proxyUrl) {
   _aiState.proxy = proxyUrl;

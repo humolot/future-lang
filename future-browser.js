@@ -16,15 +16,18 @@
 //   </script>
 //
 // Proxy contract (for Option A):
-//   POST {proxy}/ask    { prompt }           → { text }
-//   POST {proxy}/chat   { messages }         → { text }
-//   POST {proxy}/stream { prompt }           → SSE (OpenAI format)
-//   POST {proxy}/embed  { text }             → { embedding: number[] }
+//   POST {proxy}/ask      { prompt, ...opts }    → { text }
+//   POST {proxy}/chat     { messages, ...opts }  → { text }
+//   POST {proxy}/complete { prompt, messages }   → { text, model, provider, tokens }
+//   POST {proxy}/stream   { prompt, ...opts }    → SSE (OpenAI delta format)
+//   POST {proxy}/embed    { text }               → { embedding: number[] }
+//
+// opts: { temperature?, max_tokens?, model? }
 
 import { tokenize } from './src/lexer.js';
 import { parse }    from './src/parser.js';
 import { generate } from './src/generator.js';
-import { browserRuntime, setProxy, ai } from './runtime/browser.js';
+import { browserRuntime, setProxy, ai, AiError, HttpError } from './runtime/browser.js';
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -100,3 +103,4 @@ setTimeout(runScripts, 0);
 
 window.Future = Future;
 export default Future;
+export { AiError, HttpError };

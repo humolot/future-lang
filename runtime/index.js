@@ -440,7 +440,7 @@ runtime.listFunctions = (mod) => {
  * Suitable for AI agent discovery or documentation generation.
  */
 runtime.describe = () => ({
-  version: '0.4.2',
+  version: '0.4.3',
   modules: [...MODULE_NAMES],
   manifest,
 });

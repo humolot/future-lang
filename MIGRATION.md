@@ -4,7 +4,78 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.4.0 → v0.4.1 (current — Gemini improvements)
+## v0.4.2 → v0.4.3 (current — Browser runtime sync)
+
+**No breaking changes.**
+
+### Browser runtime fully synced with CLI runtime
+
+`runtime/browser.js` now matches the CLI runtime feature-for-feature:
+
+| Feature | Before | After |
+|---------|--------|-------|
+| `ai.ask/chat/stream` opts | ❌ | ✅ `{ temperature, max_tokens, model, system }` |
+| `ai.complete()` | ❌ | ✅ Returns `{ text, model, provider, tokens }` |
+| `AiError` class | ❌ | ✅ `.status`, `.code`, `.provider`, `.body` |
+| `http.configure({ headers, timeout })` | ❌ | ✅ Global request defaults |
+| `HttpError` class | ❌ | ✅ `.status`, `.statusText`, `.code`, `.url`, `.body` |
+| `assert` namespace | ❌ | ✅ `ok`, `equal`, `notEqual`, `deepEqual`, `fail` |
+| Token counts in `ai.complete()` | — | ✅ Reads from provider response |
+| `AbortSignal.timeout` in `http` | ❌ | ✅ Used when timeout is configured |
+
+The browser `assert` is implemented natively (no `node:assert` dependency) with the same error shape as the CLI version.
+
+`AiError` and `HttpError` are now exported from `future-browser.js` for use in JS integrations:
+```js
+import Future, { AiError, HttpError } from './future-browser.js';
+```
+
+The proxy contract is extended — servers can now handle `/complete`:
+```
+POST {proxy}/complete  { prompt?, messages, ...opts }  → { text, model, provider, tokens }
+```
+If `/complete` is not implemented, the browser runtime falls back to `/ask` automatically.
+
+---
+
+## v0.4.1 → v0.4.2 (ai.complete, future ast, capability layers)
+
+**No breaking changes.**
+
+### `ai.complete(prompt, opts)` → structured response
+
+```future
+result = ai.complete("Explain recursion in one sentence.")
+print result.text
+print "Tokens: {result.tokens.total}"
+print "Model:  {result.model}"
+```
+
+Returns `{ text, model, provider, tokens: { input, output, total } }`. Both Anthropic and OpenAI-compat providers read token usage from the API response.
+
+### `future ast <file.future>` — new CLI command
+
+```bash
+future ast program.future           # compact JSON
+future ast --pretty program.future  # indented JSON
+```
+
+Outputs the full AST. Useful for tooling, LSP integrations, and AI assistants generating Future code.
+
+### Capability layers documentation
+
+README and FUTURE_FOR_LLMS.md now include a three-layer table:
+
+| Layer | Namespaces |
+|-------|-----------|
+| Core language | *(none — just syntax)* |
+| Standard | `math` `http` `memory` `system` `schedule` |
+| Extended | `ai` `rag` `vision` `mqtt` `tts` `home` `device` `agent` |
+| Testing | `assert` |
+
+---
+
+## v0.4.0 → v0.4.1 (Gemini improvements)
 
 **No breaking changes.**
 
