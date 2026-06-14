@@ -1,0 +1,72 @@
+# AI Chat Multi-turno — conversa com contexto acumulado
+# Demonstra: ai.ask com contexto, ai.complete (tokens), memory dentro da sessão
+#
+# Uso:
+#   future run examples/ai-memory-chat.future
+#
+# Requer: ANTHROPIC_API_KEY, OPENAI_API_KEY ou outro provider configurado
+#   export ANTHROPIC_API_KEY=sk-ant-...
+#   export OPENAI_API_KEY=sk-...
+#   # ou instale Ollama para rodar localmente sem custo
+
+print "╔════════════════════════════════════╗"
+print "║   AI Chat com Contexto Acumulado  ║"
+print "╚════════════════════════════════════╝"
+print ""
+
+try
+  # ─── Turno 1 — apresentação ─────────────────────────────────
+  p1 = "Meu nome é Alex e tenho 3 anos de experiência com Python. Quero aprender uma segunda linguagem. O que você recomenda e por quê? (responda em 2 frases)"
+  print "Alex: {p1}"
+  r1 = ai.ask(p1)
+  print "  IA: {r1}"
+  print ""
+
+  # Guardar contexto na memória da sessão
+  memory.set("turno_1_pergunta", p1)
+  memory.set("turno_1_resposta", r1)
+
+  # ─── Turno 2 — followup com contexto ────────────────────────
+  contexto1 = "Alex tem 3 anos de Python e recebeu esta recomendação: {r1}"
+  p2        = "{contexto1}. Alex pergunta agora: Qual recurso gratuito online você recomenda para começar? (1 frase)"
+  print "Alex: Qual recurso gratuito online você recomenda para começar?"
+  r2 = ai.ask(p2)
+  print "  IA: {r2}"
+  print ""
+
+  memory.set("turno_2_resposta", r2)
+
+  # ─── Turno 3 — ai.complete para obter tokens usados ─────────
+  contexto2 = "Alex aprendeu que: {r1}. E o recurso sugerido foi: {r2}"
+  p3        = "{contexto2}. Para finalizar: dê um conselho motivacional para Alex começar hoje. (1 frase curta e direta)"
+  print "Alex: Dê um conselho motivacional para começar hoje."
+
+  result = ai.complete(p3)
+  resposta_final = result.text
+  tokens_usados  = result.tokens
+
+  print "  IA: {resposta_final}"
+  print ""
+
+  # ─── Resumo da sessão ────────────────────────────────────────
+  total_tokens = tokens_usados.total
+  print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  print "Sessão concluída:"
+  print "  3 turnos de conversa com contexto acumulado"
+  print "  Tokens usados (último turno): {total_tokens}"
+  print "  Provider: {result.provider} | Modelo: {result.model}"
+  print ""
+  print "  Turnos salvos em memória da sessão:"
+  t1p = memory.get("turno_1_pergunta")
+  print "  T1 pergunta: {t1p}"
+  t2r = memory.get("turno_2_resposta")
+  print "  T2 resposta: {t2r}"
+
+catch err
+  print "Erro: {err.message}"
+  print ""
+  print "Configure sua chave de API:"
+  print "  export ANTHROPIC_API_KEY=sk-ant-..."
+  print "  export OPENAI_API_KEY=sk-..."
+  print "  # Ollama local (sem custo): https://ollama.ai"
+end

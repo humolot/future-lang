@@ -1,0 +1,81 @@
+# Previsão do Tempo — Open-Meteo
+# API 100% gratuita, sem chave necessária
+# Mude as coordenadas para qualquer cidade do mundo
+#
+# Uso:
+#   future run examples/weather-now.future
+
+# Coordenadas (edite para sua cidade)
+# Lisboa:    38.7169, -9.1399
+# São Paulo: -23.5505, -46.6333
+# New York:  40.7128, -74.0060
+# Tokyo:     35.6762, 139.6503
+# Paris:     48.8566, 2.3522
+
+lat    = "38.7169"
+lon    = "-9.1399"
+cidade = "Lisboa, Portugal"
+
+print "=== Tempo Agora em {cidade} ==="
+print ""
+
+try
+  url  = "https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&timezone=auto"
+  resp = http.get(url)
+  cw   = resp.current_weather
+
+  temp   = cw.temperature
+  vento  = cw.windspeed
+  codigo = cw.weathercode
+  hora   = cw.time
+
+  print "Temperatura : {temp} °C"
+  print "Vento       : {vento} km/h"
+  print "Horário     : {hora}"
+  print ""
+
+  # Decodificar o código WMO de forma simples
+  descricao = "Desconhecido"
+
+  if codigo == 0
+    descricao = "Céu limpo"
+  end
+  if codigo == 1
+    descricao = "Principalmente limpo"
+  end
+  if codigo == 2
+    descricao = "Parcialmente nublado"
+  end
+  if codigo == 3
+    descricao = "Nublado"
+  end
+  if codigo == 45
+    descricao = "Nevoeiro"
+  end
+  if codigo == 51
+    descricao = "Garoa leve"
+  end
+  if codigo == 61
+    descricao = "Chuva leve"
+  end
+  if codigo == 63
+    descricao = "Chuva moderada"
+  end
+  if codigo == 65
+    descricao = "Chuva forte"
+  end
+  if codigo == 80
+    descricao = "Aguaceiros leves"
+  end
+  if codigo == 95
+    descricao = "Trovoada"
+  end
+
+  print "Condição    : {descricao} (código WMO {codigo})"
+
+catch err
+  print "Erro ao buscar o tempo: {err.message}"
+end
+
+print ""
+print "Fonte: Open-Meteo (open-meteo.com)"

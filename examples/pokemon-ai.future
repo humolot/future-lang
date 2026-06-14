@@ -1,0 +1,77 @@
+# Pokémon Explorer — PokeAPI + IA
+# PokeAPI é 100% gratuita e sem chave de API
+# A parte de IA é opcional — funciona sem ela também
+#
+# Uso:
+#   future run examples/pokemon-ai.future
+#
+# Para trocar o Pokémon, edite a variável abaixo.
+# Exemplos: pikachu, charizard, mewtwo, snorlax, gengar
+
+pokemon_name = "charizard"
+
+print "==============================="
+print "   Pokémon Explorer"
+print "==============================="
+print ""
+
+try
+  url = "https://pokeapi.co/api/v2/pokemon/{pokemon_name}"
+  p   = http.get(url)
+
+  nome   = p.name
+  altura = p.height
+  peso   = p.weight
+  exp    = p.base_experience
+
+  print "Nome            : {nome}"
+  print "Altura          : {altura} dm ({altura}0 cm)"
+  print "Peso            : {peso} hg ({peso}00 g)"
+  print "Experiência base: {exp}"
+  print ""
+
+  # Tipos
+  print "Tipos:"
+  for tipo_slot in p.types
+    tipo_obj  = tipo_slot.type
+    tipo_nome = tipo_obj.name
+    print "  • {tipo_nome}"
+  end
+  print ""
+
+  # Estatísticas base
+  print "Estatísticas base:"
+  for stat_slot in p.stats
+    stat_obj   = stat_slot.stat
+    stat_nome  = stat_obj.name
+    stat_valor = stat_slot.base_stat
+    print "  {stat_nome}: {stat_valor}"
+  end
+  print ""
+
+  # Habilidades
+  print "Habilidades:"
+  for hab_slot in p.abilities
+    hab_obj  = hab_slot.ability
+    hab_nome = hab_obj.name
+    print "  • {hab_nome}"
+  end
+  print ""
+
+  # IA — descrição épica (requer provider configurado)
+  try
+    prompt = "O pokémon {nome} tem {exp} de experiência base, altura {altura} dm e peso {peso} hg. Em duas frases, crie uma descrição épica de batalha para ele."
+    descricao = ai.ask(prompt)
+    print "─── Descrição da IA ───"
+    print descricao
+    print ""
+  catch ai_err
+    print "(IA não configurada — configure ANTHROPIC_API_KEY ou OPENAI_API_KEY para ativar)"
+  end
+
+catch err
+  print "Erro: {err.message}"
+  print "Verifique se o nome do Pokémon está correto (ex: pikachu, charizard, mewtwo)"
+end
+
+print "Fonte: PokeAPI (pokeapi.co)"

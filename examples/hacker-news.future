@@ -1,0 +1,46 @@
+# Hacker News Digest — Top 5 histórias do momento
+# API Firebase completamente gratuita, sem chave
+#
+# Uso:
+#   future run examples/hacker-news.future
+
+print "=== Hacker News — Top Stories ==="
+print ""
+
+try
+  # Buscar IDs das histórias mais votadas
+  top_ids = http.get("https://hacker-news.firebaseio.com/v0/topstories.json")
+
+  count   = 0
+  ranking = 1
+
+  for id in top_ids
+    if count < 5
+      url   = "https://hacker-news.firebaseio.com/v0/item/{id}.json"
+      story = http.get(url)
+
+      titulo      = story.title
+      pontos      = story.score
+      autor       = story.by
+      comentarios = story.descendants
+      link        = story.url
+
+      print "{ranking}. {titulo}"
+      print "   {pontos} pontos · {autor} · {comentarios} comentários"
+
+      if link != null
+        print "   {link}"
+      end
+
+      print ""
+
+      count   = count + 1
+      ranking = ranking + 1
+    end
+  end
+
+catch err
+  print "Erro ao buscar Hacker News: {err.message}"
+end
+
+print "Fonte: Hacker News Firebase API (hacker-news.firebaseio.com)"
