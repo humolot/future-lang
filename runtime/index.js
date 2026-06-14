@@ -436,14 +436,15 @@ export const manifest = {
   },
 
   db: {
-    open:   { description: 'Open (or create) a SQLite database file. Use ":memory:" for an in-memory database.', params: [{ name: 'path', type: 'string' }], returns: 'string', async: false },
-    exec:   { description: 'Execute raw SQL with no return value (CREATE TABLE, DROP, PRAGMA, etc.)', params: [{ name: 'sql', type: 'string' }], returns: 'void', async: false },
-    query:  { description: 'Run a SELECT and return all matching rows as an array of objects', params: [{ name: 'sql', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: 'array', async: false },
-    get:    { description: 'Run a SELECT and return the first matching row, or null', params: [{ name: 'sql', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: 'object|null', async: false },
-    insert: { description: 'Insert a row into a table. Returns { id, changes }.', params: [{ name: 'table', type: 'string' }, { name: 'data', type: 'object' }], returns: '{ id: number, changes: number }', async: false },
-    update: { description: 'Update rows matching a WHERE clause. Returns { changes }.', params: [{ name: 'table', type: 'string' }, { name: 'data', type: 'object' }, { name: 'where', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: '{ changes: number }', async: false },
-    delete: { description: 'Delete rows matching a WHERE clause. Returns { changes }.', params: [{ name: 'table', type: 'string' }, { name: 'where', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: '{ changes: number }', async: false },
-    close:  { description: 'Close the database connection', params: [], returns: 'void', async: false },
+    connect: { description: 'Connect to a database. Auto-detects driver from URL: SQLite (file path), postgres://, mysql://', params: [{ name: 'url', type: 'string' }], returns: 'void', async: true },
+    open:    { description: 'Open (or create) a SQLite database file — alias for db.connect(path)', params: [{ name: 'path', type: 'string' }], returns: 'void', async: true },
+    exec:    { description: 'Execute raw SQL with no return value (CREATE TABLE, DROP, etc.)', params: [{ name: 'sql', type: 'string' }], returns: 'void', async: true },
+    query:   { description: 'Run a SELECT and return all matching rows as an array of objects', params: [{ name: 'sql', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: 'array', async: true },
+    get:     { description: 'Run a SELECT and return the first matching row, or null', params: [{ name: 'sql', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: 'object|null', async: true },
+    insert:  { description: 'Insert a row into a table. Returns { id, changes }.', params: [{ name: 'table', type: 'string' }, { name: 'data', type: 'object' }], returns: '{ id: number, changes: number }', async: true },
+    update:  { description: 'Update rows matching a WHERE clause. Returns { changes }.', params: [{ name: 'table', type: 'string' }, { name: 'data', type: 'object' }, { name: 'where', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: '{ changes: number }', async: true },
+    delete:  { description: 'Delete rows matching a WHERE clause. Returns { changes }.', params: [{ name: 'table', type: 'string' }, { name: 'where', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: '{ changes: number }', async: true },
+    close:   { description: 'Close the database connection / pool', params: [], returns: 'void', async: true },
   },
 };
 

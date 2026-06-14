@@ -1,13 +1,18 @@
-# REST API with SQLite — a complete working backend
-# Requires: npm install better-sqlite3
-#
-# Usage:
+# REST API with database backend
+# SQLite (default, no server needed):
+#   npm install better-sqlite3
 #   future run examples/api-server.future
-#   curl http://localhost:3000/api/users
-#   curl -X POST http://localhost:3000/api/users -H "Content-Type: application/json" -d '{"name":"Alice","email":"alice@example.com"}'
+#
+# PostgreSQL:
+#   npm install pg
+#   Change db.connect below to: db.connect("postgres://user:pass@localhost/mydb")
+#
+# MySQL / MariaDB:
+#   npm install mysql2
+#   Change db.connect below to: db.connect("mysql://user:pass@localhost/mydb")
 
-# Open database (creates file if it doesn't exist)
-db.open("./users.db")
+# Connect — swap the URL to switch databases, no other code changes needed
+db.connect("./users.db")
 
 # Create table
 db.exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE, created_at TEXT DEFAULT CURRENT_TIMESTAMP)")
