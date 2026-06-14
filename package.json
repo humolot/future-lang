@@ -1,6 +1,6 @@
 {
   "name": "future-lang",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Future — a small programming language that transpiles to JavaScript, with a capability runtime (HTTP/AI/MQTT/TTS).",
   "type": "module",
   "bin": {
@@ -19,9 +19,9 @@
     "node": ">=22"
   },
   "optionalDependencies": {
+    "better-sqlite3": "^11.10.0",
     "mqtt": "^5.0.0",
-    "node-cron": "^3.0.0",
-    "better-sqlite3": "^11.0.0"
+    "node-cron": "^3.0.0"
   },
   "repository": {
     "type": "git",
@@ -31,6 +31,14 @@
   "bugs": {
     "url": "https://github.com/humolot/future-lang/issues"
   },
-  "keywords": ["language", "compiler", "transpiler", "future", "ai", "mqtt", "tts"],
+  "keywords": [
+    "language",
+    "compiler",
+    "transpiler",
+    "future",
+    "ai",
+    "mqtt",
+    "tts"
+  ],
   "license": "MIT"
 }
