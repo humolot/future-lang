@@ -8,8 +8,8 @@ Future is a small language that compiles to JavaScript. It does NOT exist in you
 
 | Layer | Namespaces | Notes |
 |-------|-----------|-------|
-| **Core language** | *(none)* | variables, if/end, for/end, while/end, try/catch/end, functions, lists, objects, strings |
-| **Standard** | `math` `http` `memory` `system` `schedule` | General-purpose I/O; triggers async mode |
+| **Core language** | *(none)* | variables, if/end, for/end, while/end, try/catch/end, functions, lists, objects, strings, index access |
+| **Standard** | `math` `http` `memory` `system` `schedule` `server` `db` | General-purpose I/O; triggers async mode |
 | **Extended** | `ai` `rag` `vision` `mqtt` `tts` `home` `device` `agent` | AI, IoT, automation; triggers async mode |
 | **Testing** | `assert` | Use only in `*.test.future` files |
 
@@ -27,7 +27,7 @@ agent  use  as
 
 Reserved namespaces (cannot be reassigned or used as function names):
 ```
-ai  http  mqtt  tts  rag  vision  home  memory  schedule  system  device  math  assert
+ai  http  mqtt  tts  rag  vision  home  memory  schedule  system  device  math  assert  server  db
 ```
 
 ---
@@ -37,7 +37,7 @@ ai  http  mqtt  tts  rag  vision  home  memory  schedule  system  device  math  
 ```
 program     = statement*
 statement   = print | assignment | if | function | return
-            | for | while | try | on | every | stream | agent | use | expr_stmt
+            | for | while | try | on | every | stream | agent | use | server_route | expr_stmt
 
 print       = "print" expression
 assignment  = IDENTIFIER "=" expression
@@ -52,10 +52,13 @@ every       = "every" expression block "end"
 stream      = "stream" call_expr block "end"
 agent       = "agent" IDENTIFIER ("use" IDENTIFIER)* block "end"
 use         = "use" STRING ("as" IDENTIFIER)?
+server_route = "server" "." METHOD "(" STRING ")" block "end"
+METHOD      = "get" | "post" | "put" | "patch" | "delete"
 
 block       = statement*
 params      = (IDENTIFIER ("," IDENTIFIER)*)?
 expression  = or_expr
+primary     = atom ("." IDENTIFIER | "(" args ")" | "[" expression "]")*
 call_expr   = IDENTIFIER "(" args ")"
             | IDENTIFIER "." IDENTIFIER "(" args ")"
 args        = (expression ("," expression)*)?
@@ -73,6 +76,7 @@ args        = (expression ("," expression)*)?
 - `null` and `none` are the same
 - Commas in lists: required — `[1, 2, 3]`
 - Commas in objects: optional — `{ name: "Alice"  age: 30 }` or `{ name: "Alice", age: 30 }`
+- Index access: `list[0]`, `rows[i]`, `map["key"]` — any expression inside `[]`
 
 ---
 
@@ -147,6 +151,7 @@ user   = { name: "João"  age: 30  city: "Lisbon" }
 scores = [85, 92, 78]
 print user.name
 print scores.length
+print scores[0]       # index access — 85
 ```
 
 ### String interpolation
@@ -266,6 +271,77 @@ catch err
     print "Status: {err.status}"
     print "Code: {err.code}"
 end
+```
+
+### `server`
+
+HTTP server. Route blocks have an implicit `req` variable.
+
+```
+# Register routes (call before server.listen)
+server.get("/api/users")
+    users = db.query("SELECT * FROM users")
+    return users
+end
+
+server.post("/api/users")
+    name   = req.body.name
+    result = db.insert("users", { name: name })
+    return result
+end
+
+server.get("/api/users/:id")
+    id   = req.params.id
+    user = db.get("SELECT * FROM users WHERE id = ?", [id])
+    return user
+end
+
+server.delete("/api/users/:id")
+    id = req.params.id
+    db.delete("users", "id = ?", [id])
+    return { ok: true }
+end
+
+server.listen(3000)   # start listening
+server.close()        # stop the server
+```
+
+Inside a route block, `req` contains:
+- `req.params` — path parameters (`:id` → `req.params.id`)
+- `req.body` — parsed JSON or URL-encoded body
+- `req.query` — parsed query string (`?foo=bar` → `req.query.foo`)
+- `req.headers` — request headers
+- `req.method`, `req.path`
+
+`return` an object → JSON (`Content-Type: application/json`).
+`return` a string → plain text.
+`return null` → 204 No Content.
+
+**Important:** `server` and `db` are reserved namespaces — cannot be reassigned.
+
+### `db`
+
+SQLite database via `better-sqlite3` (optional dependency — install separately).
+
+```
+db.open("./app.db")                              # open or create file
+db.exec("CREATE TABLE IF NOT EXISTS t (id INTEGER PRIMARY KEY, name TEXT)")
+
+rows = db.query("SELECT * FROM t WHERE name LIKE ?", ["%alice%"])  # → array
+row  = db.get("SELECT * FROM t WHERE id = ?", [1])                 # → object or null
+
+result = db.insert("t", { name: "Alice" })       # → { id, changes }
+print result.id
+
+db.update("t", { name: "Alicia" }, "id = ?", [result.id])  # → { changes }
+db.delete("t", "id = ?", [result.id])                       # → { changes }
+
+db.close()
+```
+
+Install `better-sqlite3` before using `db`:
+```bash
+npm install better-sqlite3
 ```
 
 ### `assert` (use in *.test.future files)

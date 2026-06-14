@@ -1,0 +1,79 @@
+# REST API with SQLite — a complete working backend
+# Requires: npm install better-sqlite3
+#
+# Usage:
+#   future run examples/api-server.future
+#   curl http://localhost:3000/api/users
+#   curl -X POST http://localhost:3000/api/users -H "Content-Type: application/json" -d '{"name":"Alice","email":"alice@example.com"}'
+
+# Open database (creates file if it doesn't exist)
+db.open("./users.db")
+
+# Create table
+db.exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE, created_at TEXT DEFAULT CURRENT_TIMESTAMP)")
+
+# Seed some data if the table is empty
+existing = db.query("SELECT COUNT(*) as total FROM users")
+count = existing[0]
+total = count.total
+
+if total == 0
+  db.insert("users", { name: "Alice", email: "alice@example.com" })
+  db.insert("users", { name: "Bob",   email: "bob@example.com" })
+  print "Seeded 2 users."
+end
+
+# GET /api/users — list all users
+server.get("/api/users")
+  users = db.query("SELECT * FROM users ORDER BY id")
+  return users
+end
+
+# GET /api/users/:id — get one user
+server.get("/api/users/:id")
+  id   = req.params.id
+  user = db.get("SELECT * FROM users WHERE id = ?", [id])
+  if user == null
+    return { error: "User not found" }
+  end
+  return user
+end
+
+# POST /api/users — create a user
+server.post("/api/users")
+  name  = req.body.name
+  email = req.body.email
+  if name == null
+    return { error: "name is required" }
+  end
+  result = db.insert("users", { name: name, email: email })
+  user   = db.get("SELECT * FROM users WHERE id = ?", [result.id])
+  return user
+end
+
+# DELETE /api/users/:id — delete a user
+server.delete("/api/users/:id")
+  id      = req.params.id
+  deleted = db.delete("users", "id = ?", [id])
+  if deleted.changes == 0
+    return { error: "User not found" }
+  end
+  return { ok: true, deleted: id }
+end
+
+# GET / — health check
+server.get("/")
+  users = db.query("SELECT COUNT(*) as total FROM users")
+  info  = users[0]
+  return { status: "ok", users: info.total, version: "1.0" }
+end
+
+# Start server
+server.listen(3000)
+print "API running at http://localhost:3000"
+print ""
+print "Try it:"
+print "  curl http://localhost:3000/api/users"
+print "  curl http://localhost:3000/api/users/1"
+print "  curl -X POST http://localhost:3000/api/users -H 'Content-Type: application/json' -d '{\"name\":\"Carol\",\"email\":\"carol@example.com\"}'"
+print "  curl -X DELETE http://localhost:3000/api/users/1"

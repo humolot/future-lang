@@ -22,7 +22,7 @@ import { format } from './formatter.js';
 import { FutureError } from './errors.js';
 import { buildSourceMap } from './sourcemap.js';
 
-const VERSION = '0.4.6';
+const VERSION = '0.5.0';
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const RUNTIME_INDEX = join(PROJECT_ROOT, 'runtime', 'index.js');
 

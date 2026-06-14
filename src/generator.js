@@ -25,6 +25,8 @@ export const NAMESPACES = new Set([
   'memory', 'schedule', 'system', 'device', // optional new modules
   'math',                               // general-purpose math
   'assert',                             // test assertions
+  'server',                             // HTTP server
+  'db',                                 // SQLite database
 ]);
 
 export class Generator {
@@ -241,6 +243,18 @@ export class Generator {
         return `${pad}await __rt.schedule.every(${interval}, __safe("schedule", async () => {\n${inner}\n${pad}}));`;
       }
 
+      case NodeType.ServerRoute: {
+        // `server.get("/path") ... end`
+        // → await __rt.server.get("/path", async (req) => { let ...; body })
+        // `req` is the implicit request variable; filter it from hoisted locals.
+        const locals = collectAssignedNames(node.body).filter((n) => n !== 'req');
+        const inner = [];
+        if (locals.length > 0) inner.push(`${INDENT.repeat(depth + 1)}let ${locals.join(', ')};`);
+        for (const stmt of node.body) inner.push(this.genStatement(stmt, depth + 1));
+        const path = JSON.stringify(node.path);
+        return `${pad}await __rt.server.${node.method}(${path}, async (req) => {\n${inner.join('\n')}\n${pad}});`;
+      }
+
       default:
         throw new FutureError(
           `Cannot generate statement of type ${node.type}`,
@@ -279,6 +293,8 @@ export class Generator {
         }
         return `${this.genExpression(obj)}.${node.property}`;
       }
+      case NodeType.IndexExpression:
+        return `${this.genExpression(node.object)}[${this.genExpression(node.index)}]`;
       case NodeType.CallExpression:
         return this.genCall(node);
       case NodeType.UnaryExpression: {
@@ -399,9 +415,10 @@ function usesRuntime(node, useAliases = new Set()) {
       if (NAMESPACES.has(m[1])) return true;
     }
   }
-  // Event-oriented, streaming, and agent statements always require async mode.
+  // Event-oriented, streaming, agent, and server-route statements always require async mode.
   if (node.type === NodeType.OnStatement || node.type === NodeType.EveryStatement) return true;
   if (node.type === NodeType.StreamStatement) return true;
+  if (node.type === NodeType.ServerRoute) return true;
   // AgentDeclaration always compiles to an async function — callers must await it.
   if (node.type === NodeType.AgentDeclaration) return true;
   // For, While, and Try: walk their bodies (handled by the generic key loop below).
@@ -422,7 +439,8 @@ function usesHandlers(node) {
   if (
     node.type === NodeType.OnStatement ||
     node.type === NodeType.EveryStatement ||
-    node.type === NodeType.StreamStatement
+    node.type === NodeType.StreamStatement ||
+    node.type === NodeType.ServerRoute
   ) return true;
   for (const key of Object.keys(node)) {
     const v = node[key];

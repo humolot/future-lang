@@ -200,6 +200,8 @@ mqtt.publish("home/livingroom/light", "on")
 |------------|-----------|-------|
 | `http`     | `get(url)`, `post(url, body)`, `configure(opts)` | Parses JSON automatically; throws `HttpError` with `.status`, `.code`, `.body` |
 | `ai`       | `ask(prompt, opts?)`, `chat(messages, opts?)`, `embed(text)`, `stream(prompt, cb, opts?)`, `configure(provider, key)` | opts: `{ temperature, max_tokens, model }`; throws `AiError` |
+| `server`   | Route blocks (`get/post/put/patch/delete`), `listen(port)`, `close()` | HTTP server; implicit `req` in route body |
+| `db`       | `open(path)`, `exec(sql)`, `query(sql, p?)`, `get(sql, p?)`, `insert(t, data)`, `update(t, data, w, p?)`, `delete(t, w, p?)`, `close()` | SQLite via `better-sqlite3` (optional dep) |
 | `tts`      | `speak(text)` | System engine (`say` / SAPI / `espeak-ng`) |
 | `mqtt`     | `publish(topic, msg)`, `subscribe(topic, handler)` | Real broker or in-process loopback |
 | `memory`   | `set(key, v)`, `get(key)`, `delete(key)`, `search(q)`, `forget(pattern?)` | In-process key-value store |
@@ -327,6 +329,61 @@ every "30m"
   data = http.get("https://api.example.com/stats")
   print data.count
 end
+```
+
+---
+
+## HTTP server
+
+Build a REST API entirely in Future. No external frameworks needed.
+
+```future
+db.open("./app.db")
+db.exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)")
+
+server.get("/api/users")
+  users = db.query("SELECT * FROM users")
+  return users
+end
+
+server.post("/api/users")
+  name   = req.body.name
+  result = db.insert("users", { name: name })
+  user   = db.get("SELECT * FROM users WHERE id = ?", [result.id])
+  return user
+end
+
+server.get("/api/users/:id")
+  id   = req.params.id
+  user = db.get("SELECT * FROM users WHERE id = ?", [id])
+  if user == null
+    return { error: "Not found" }
+  end
+  return user
+end
+
+server.delete("/api/users/:id")
+  id      = req.params.id
+  deleted = db.delete("users", "id = ?", [id])
+  return { ok: true, deleted: deleted.changes }
+end
+
+server.listen(3000)
+print "API running at http://localhost:3000"
+```
+
+Inside any route block, the implicit `req` variable contains:
+- `req.params` — URL path parameters (`:id`, `:slug`, etc.)
+- `req.body` — parsed JSON or URL-encoded body
+- `req.query` — parsed query string
+- `req.headers` — request headers
+
+`return` an object → JSON response. `return` a string → `text/plain`. `return null` → 204 No Content.
+
+SQLite requires `better-sqlite3`:
+
+```bash
+npm install better-sqlite3
 ```
 
 ---

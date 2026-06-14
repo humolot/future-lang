@@ -20,7 +20,11 @@ const EXPR_TERMINATORS = new Set(['END', 'ELSE', 'CATCH', 'EOF']);
 const RESERVED_NAMESPACES = new Set([
   'ai', 'http', 'mqtt', 'tts', 'rag', 'vision', 'home',
   'memory', 'schedule', 'system', 'device', 'math', 'assert',
+  'server', 'db',
 ]);
+
+/** HTTP verbs that open a server route block: server.METHOD("path") ... end */
+const SERVER_METHODS = new Set(['get', 'post', 'put', 'delete', 'patch']);
 
 export class Parser {
   /** @param {import('./lexer.js').Token[]} tokens */
@@ -91,6 +95,13 @@ export class Parser {
       case 'IDENTIFIER':
         // One token of lookahead separates assignment from a bare call/expression.
         if (this.peek(1).type === 'ASSIGN') return this.parseAssignment();
+        // server.METHOD("path") ... end  — HTTP route block
+        if (
+          this.peek(0).value === 'server' &&
+          this.peek(1).type === 'DOT' &&
+          SERVER_METHODS.has(this.peek(2).value) &&
+          this.peek(3).type === 'LPAREN'
+        ) return this.parseServerRoute();
         return this.parseExpressionStatement();
       default:
         return this.parseExpressionStatement();
@@ -285,6 +296,23 @@ export class Parser {
   }
 
   /**
+   * `server.METHOD("path") ... end`
+   * Registers an HTTP route. The body has an implicit `req` variable.
+   * e.g. `server.get("/api/users") ... end`
+   */
+  parseServerRoute() {
+    const kw = this.advance(); // IDENTIFIER 'server'
+    this.advance();            // DOT '.'
+    const method = this.advance().value; // get | post | put | delete | patch
+    this.expect('LPAREN', "'('");
+    const path = this.expect('STRING', 'route path string (e.g. "/api/users")');
+    this.expect('RPAREN', "')'");
+    const body = this.parseBlock(['END'], `server.${method}`);
+    this.expect('END', `'end' to close 'server.${method}'`);
+    return AST.ServerRoute(method, path.value, body, kw.line, kw.column);
+  }
+
+  /**
    * `every <interval-expr> ... end`
    * e.g. `every "30m" ... end`
    * Compiles to schedule.every(interval, async () => { ... }).
@@ -387,9 +415,9 @@ export class Parser {
     return this.parsePrimary();
   }
 
-  // primary = atom followed by any chain of `.member` and `(call)` postfixes.
-  // This is what powers capability calls like http.get("...") and ai.ask("..."),
-  // as well as ordinary property access like todo.title.
+  // primary = atom followed by any chain of `.member`, `(call)`, and `[index]` postfixes.
+  // This powers capability calls like http.get("..."), property access like todo.title,
+  // and array/object indexing like rows[0] or map["key"].
   parsePrimary() {
     let node = this.parseAtom();
     while (true) {
@@ -398,6 +426,11 @@ export class Parser {
         node = AST.MemberExpression(node, prop.value, prop.line, prop.column);
       } else if (this.check('LPAREN')) {
         node = this.finishCall(node);
+      } else if (this.check('LBRACKET')) {
+        const bracket = this.advance(); // '['
+        const index = this.parseExpression();
+        this.expect('RBRACKET', "']'");
+        node = AST.IndexExpression(node, index, bracket.line, bracket.column);
       } else {
         break;
       }

@@ -78,6 +78,28 @@ future run examples/ai-memory-chat.future
 
 ---
 
+## Requires `better-sqlite3`
+
+Install once:
+```bash
+npm install better-sqlite3
+```
+
+### `api-server.future` — REST API with SQLite
+A complete CRUD API running on `http://localhost:3000`. Creates a `users` table, seeds two rows, and exposes five routes.
+Demonstrates: `server.get/post/delete`, `db.open/exec/query/get/insert/delete`, `req.params`, `req.body`, `server.listen`.
+
+```bash
+npm install better-sqlite3
+future run examples/api-server.future
+# curl http://localhost:3000/api/users
+# curl http://localhost:3000/api/users/1
+# curl -X POST http://localhost:3000/api/users -H "Content-Type: application/json" -d '{"name":"Carol","email":"carol@example.com"}'
+# curl -X DELETE http://localhost:3000/api/users/1
+```
+
+---
+
 ## Other examples
 
 | File | Description |

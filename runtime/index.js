@@ -17,15 +17,18 @@ import * as system   from './system.js';
 import * as device   from './device.js';
 import * as math     from './math.js';
 import * as assert   from './assert.js';
+import * as server   from './server.js';
+import * as db       from './db.js';
 import readline from 'node:readline';
 
 // Canonical ordered list of capability module names.
 const MODULE_NAMES = [
   'ai', 'http', 'mqtt', 'tts', 'rag', 'vision', 'home',
   'memory', 'schedule', 'system', 'device', 'math', 'assert',
+  'server', 'db',
 ];
 
-const _base = { ai, http, mqtt, tts, rag, vision, home, memory, schedule, system, device, math, assert };
+const _base = { ai, http, mqtt, tts, rag, vision, home, memory, schedule, system, device, math, assert, server, db };
 
 /**
  * When FUTURE_DEBUG=1, wrap every namespace method with timing/logging.
@@ -421,6 +424,27 @@ export const manifest = {
     deepEqual: { description: 'Assert deep structural equality',                params: [{ name: 'actual', type: 'any' }, { name: 'expected', type: 'any' }, { name: 'msg', type: 'string', optional: true }], returns: 'void', async: false },
     fail:      { description: 'Unconditionally fail the test with a message',   params: [{ name: 'msg', type: 'string', optional: true }], returns: 'void', async: false },
   },
+
+  server: {
+    get:    { description: 'Register a GET route handler block',    params: [{ name: 'path', type: 'string' }], returns: 'void', async: false },
+    post:   { description: 'Register a POST route handler block',   params: [{ name: 'path', type: 'string' }], returns: 'void', async: false },
+    put:    { description: 'Register a PUT route handler block',    params: [{ name: 'path', type: 'string' }], returns: 'void', async: false },
+    delete: { description: 'Register a DELETE route handler block', params: [{ name: 'path', type: 'string' }], returns: 'void', async: false },
+    patch:  { description: 'Register a PATCH route handler block',  params: [{ name: 'path', type: 'string' }], returns: 'void', async: false },
+    listen: { description: 'Start the HTTP server on the given port', params: [{ name: 'port', type: 'number', optional: true }], returns: 'number', async: true },
+    close:  { description: 'Stop the HTTP server',                  params: [], returns: 'void', async: false },
+  },
+
+  db: {
+    open:   { description: 'Open (or create) a SQLite database file. Use ":memory:" for an in-memory database.', params: [{ name: 'path', type: 'string' }], returns: 'string', async: false },
+    exec:   { description: 'Execute raw SQL with no return value (CREATE TABLE, DROP, PRAGMA, etc.)', params: [{ name: 'sql', type: 'string' }], returns: 'void', async: false },
+    query:  { description: 'Run a SELECT and return all matching rows as an array of objects', params: [{ name: 'sql', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: 'array', async: false },
+    get:    { description: 'Run a SELECT and return the first matching row, or null', params: [{ name: 'sql', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: 'object|null', async: false },
+    insert: { description: 'Insert a row into a table. Returns { id, changes }.', params: [{ name: 'table', type: 'string' }, { name: 'data', type: 'object' }], returns: '{ id: number, changes: number }', async: false },
+    update: { description: 'Update rows matching a WHERE clause. Returns { changes }.', params: [{ name: 'table', type: 'string' }, { name: 'data', type: 'object' }, { name: 'where', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: '{ changes: number }', async: false },
+    delete: { description: 'Delete rows matching a WHERE clause. Returns { changes }.', params: [{ name: 'table', type: 'string' }, { name: 'where', type: 'string' }, { name: 'params', type: 'array', optional: true }], returns: '{ changes: number }', async: false },
+    close:  { description: 'Close the database connection', params: [], returns: 'void', async: false },
+  },
 };
 
 // --- Introspection API ---
@@ -440,7 +464,7 @@ runtime.listFunctions = (mod) => {
  * Suitable for AI agent discovery or documentation generation.
  */
 runtime.describe = () => ({
-  version: '0.4.3',
+  version: '0.5.0',
   modules: [...MODULE_NAMES],
   manifest,
 });

@@ -4,7 +4,106 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.4.4 → v0.4.5 (current — `future demo` command)
+## v0.4.6 → v0.5.0 (current — HTTP server + SQLite database + array indexing)
+
+**No breaking changes.**
+
+### HTTP server namespace (`server`)
+
+Register route handlers with a block syntax. The server keeps running until the process exits.
+
+```future
+server.get("/api/users")
+  users = db.query("SELECT * FROM users")
+  return users
+end
+
+server.post("/api/users")
+  name = req.body.name
+  result = db.insert("users", { name: name })
+  return result
+end
+
+server.listen(3000)
+print "Listening on http://localhost:3000"
+```
+
+- `server.get/post/put/patch/delete("path") ... end` — register a route; implicit `req` variable available inside
+- `req.params` — URL path parameters (e.g. `:id` in `/users/:id`)
+- `req.body` — parsed JSON or URL-encoded body
+- `req.query` — parsed query string
+- `req.headers` — request headers
+- `server.listen(port)` — start the server (resolves when ready)
+- `server.close()` — stop the server
+- Returns JSON for objects, plain text for strings, 204 for null
+- No external dependencies — uses Node.js built-in `http` module
+
+### SQLite database namespace (`db`)
+
+Requires `better-sqlite3` (already listed as an optional dependency):
+
+```bash
+npm install better-sqlite3   # first time only
+```
+
+```future
+db.open("./app.db")
+db.exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)")
+
+# Query
+rows = db.query("SELECT * FROM users WHERE name LIKE ?", ["%alice%"])
+row  = db.get("SELECT * FROM users WHERE id = ?", [1])
+
+# Write
+result = db.insert("users", { name: "Alice" })
+print result.id
+
+db.update("users", { name: "Alicia" }, "id = ?", [result.id])
+db.delete("users", "id = ?", [result.id])
+
+db.close()
+```
+
+- `db.open(path)` — open or create an SQLite file
+- `db.exec(sql)` — run DDL (CREATE TABLE, etc.)
+- `db.query(sql, params?)` → array of rows
+- `db.get(sql, params?)` → first row or null
+- `db.insert(table, data)` → `{ id, changes }`
+- `db.update(table, data, where, params?)` → `{ changes }`
+- `db.delete(table, where, params?)` → `{ changes }`
+- `db.close()` — close the connection
+
+### Array / object index access (`expr[n]`)
+
+```future
+rows = db.query("SELECT COUNT(*) as total FROM users")
+first = rows[0]
+print first.total
+```
+
+Index expressions now work everywhere — on arrays, objects, and anything that returns a subscriptable value:
+
+```future
+items = [10, 20, 30]
+print items[0]        # 10
+print items[1]        # 20
+```
+
+Previously, `rows[0]` was incorrectly split into two statements. This is now fixed.
+
+### New example: `api-server.future`
+
+A complete REST CRUD API with SQLite persistence. See `examples/api-server.future`.
+
+```bash
+npm install better-sqlite3
+future run examples/api-server.future
+# curl http://localhost:3000/api/users
+```
+
+---
+
+## v0.4.4 → v0.4.5 (`future demo` command)
 
 **No breaking changes.**
 

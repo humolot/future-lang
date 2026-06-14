@@ -25,8 +25,10 @@ export const NodeType = Object.freeze({
   TryStatement: 'TryStatement',     // try ... catch <var> ... end
   // Streaming.
   StreamStatement: 'StreamStatement', // stream <call> ... end
-  // Agent declaration — architecture support (parser implementation pending).
+  // Agent declaration.
   AgentDeclaration: 'AgentDeclaration', // agent <name> use <cap> ... end
+  // HTTP server route handler block.
+  ServerRoute: 'ServerRoute',           // server.get("/path") ... end
   // Literals.
   ArrayLiteral: 'ArrayLiteral',     // [expr, expr, ...]
   ObjectLiteral: 'ObjectLiteral',   // { key: expr  key: expr }
@@ -34,6 +36,7 @@ export const NodeType = Object.freeze({
   UnaryExpression: 'UnaryExpression',
   CallExpression: 'CallExpression',
   MemberExpression: 'MemberExpression',
+  IndexExpression: 'IndexExpression',  // expr[index]
   Identifier: 'Identifier',
   NumberLiteral: 'NumberLiteral',
   StringLiteral: 'StringLiteral',
@@ -148,6 +151,18 @@ export const StreamStatement = (call, body, line, column) => ({
   type: NodeType.StreamStatement, call, body, line, column,
 });
 
+/**
+ * `server.METHOD("path") ... end`
+ * Registers an HTTP route handler. Body receives an implicit `req` binding.
+ * Compiles to: await __rt.server.METHOD("/path", async (req) => { ... })
+ * @param {string}   method  HTTP verb: get | post | put | delete | patch
+ * @param {string}   path    Route path, e.g. "/api/users" or "/users/:id"
+ * @param {object[]} body    Statement list (handler body).
+ */
+export const ServerRoute = (method, path, body, line, column) => ({
+  type: NodeType.ServerRoute, method, path, body, line, column,
+});
+
 // --- Expressions ---
 export const BinaryExpression = (operator, left, right, line, column) => ({
   type: NodeType.BinaryExpression, operator, left, right, line, column,
@@ -165,6 +180,11 @@ export const CallExpression = (callee, args, line, column) => ({
 /** `object.property` — e.g. http.get or todo.title. `property` is a string. */
 export const MemberExpression = (object, property, line, column) => ({
   type: NodeType.MemberExpression, object, property, line, column,
+});
+
+/** `object[index]` — e.g. rows[0], items[i]. */
+export const IndexExpression = (object, index, line, column) => ({
+  type: NodeType.IndexExpression, object, index, line, column,
 });
 
 export const Identifier = (name, line, column) => ({

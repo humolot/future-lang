@@ -1,6 +1,6 @@
 # Future — Roadmap
 
-**Version:** 0.4.1 · **Last updated:** 2026-06-13
+**Version:** 0.5.0 · **Last updated:** 2026-06-14
 
 Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 
@@ -201,6 +201,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | `while condition ... end` | ✅ | Condition-based loop |
 | `try ... catch err ... end` | ✅ | Error handling |
 | Lists `[1, 2, 3]` | ✅ | Array literals |
+| Index access `expr[n]` | ✅ | `rows[0]`, `items[i]`, `map["key"]` |
 | Object literals `{ key: value }` | ✅ | No commas required (Future style) |
 | String interpolation `"Hello {name}"` | ✅ | Template literal output |
 | Namespace refs in strings `"{math.pi}"` | ✅ | Correctly emits `${__rt.math.pi}` in async mode |
@@ -238,7 +239,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 
 ---
 
-## HTTP
+## HTTP Client
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -248,6 +249,44 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | Structured `HttpError` (status, code, url, body) | ✅ | Catchable with rich properties |
 | `http.put / patch / delete` | 📋 | Additional HTTP verbs |
 | Response headers access | 📋 | `res.headers.get("content-type")` |
+
+---
+
+## HTTP Server
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `server.get/post/put/patch/delete("path") ... end` | ✅ | Route block with implicit `req` variable |
+| `req.params` — URL path parameters | ✅ | `:id` in `/users/:id` |
+| `req.body` — parsed request body | ✅ | JSON or URL-encoded |
+| `req.query` — parsed query string | ✅ | |
+| `req.headers` — request headers | ✅ | |
+| `server.listen(port)` | ✅ | Starts the server |
+| `server.close()` | ✅ | Stops the server |
+| Auto JSON response for objects | ✅ | `return { ok: true }` → JSON |
+| Text response for strings | ✅ | `return "hello"` → `text/plain` |
+| No external dependencies | ✅ | Uses Node.js built-in `http` module |
+| HTTPS / TLS | 📋 | Wrap with reverse proxy (nginx) |
+| WebSockets | 💡 | `server.ws("/path") ... end` |
+
+---
+
+## SQLite Database
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `db.open(path)` | ✅ | Opens or creates an SQLite file |
+| `db.exec(sql)` | ✅ | DDL — CREATE TABLE, etc. |
+| `db.query(sql, params?)` | ✅ | SELECT → array of rows |
+| `db.get(sql, params?)` | ✅ | SELECT → first row or null |
+| `db.insert(table, data)` | ✅ | Returns `{ id, changes }` |
+| `db.update(table, data, where, params?)` | ✅ | Returns `{ changes }` |
+| `db.delete(table, where, params?)` | ✅ | Returns `{ changes }` |
+| `db.close()` | ✅ | Closes the connection |
+| Parameterized queries (`?` placeholders) | ✅ | SQL injection safe |
+| Optional dependency (`better-sqlite3`) | ✅ | Install only when needed |
+| Migrations / schema versioning | 📋 | Use `db.exec()` with IF NOT EXISTS for now |
+| Multiple databases open simultaneously | 📋 | One `db.open()` at a time currently |
 
 ---
 
@@ -282,7 +321,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | CLI: `future doctor` | ✅ | Environment health check |
 | CLI: `future playground` | ✅ | Launches browser playground server |
 | Source maps (`.js.map`) | ✅ | VLQ-encoded Source Map v3 |
-| Structured manifest | ✅ | All 13 modules, 50+ functions fully described |
+| Structured manifest | ✅ | All 15 modules, 60+ functions fully described |
 | Runtime introspection API | ✅ | `runtime.describe()` / `listModules()` / `listFunctions()` |
 | LSP metadata module | ✅ | Completions, hover, signatures |
 | Browser playground | ✅ | `future-playground.html` — 11 examples |
@@ -298,14 +337,17 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | Priority | Item | Why it matters |
 |----------|------|----------------|
 | ✅ Done | VSCode extension (syntax highlighting + snippets) | Published to Marketplace |
+| ✅ Done | HTTP server (`server.*`) | Build REST APIs in Future |
+| ✅ Done | SQLite database (`db.*`) | Persistent storage with no cloud dependency |
+| ✅ Done | Array index access (`expr[n]`) | Access rows[0], items[i], etc. |
 | 🔴 Critical | Language Server (LSP) | Completions and hover for all IDEs |
 | 🟠 High | `ai.extract(text, schema)` | Structured output is the #1 AI use case |
 | 🟠 High | Test isolation (separate process) | Prevents test state leakage |
 | 🟠 High | `assert.throws(fn)` | Needed for error-handling tests |
 | 🟡 Medium | Home Assistant REST API | Most HA users don't run MQTT |
-| 🟡 Medium | Persistent memory / device registry | Most programs are stateless today |
+| 🟡 Medium | Persistent memory / device registry | Survives process restarts |
 | 🟡 Medium | Agent tool-calling loop (ReAct) | True autonomous agents |
-| 🟡 Medium | `http.put / patch / delete` | Needed for full REST APIs |
+| 🟡 Medium | `http.put / patch / delete` | Additional HTTP verbs |
 | 🟢 Low | `rag.delete(id)` | Selective document removal |
 | 🟢 Low | REPL | Nice-to-have for exploration |
 | 🟢 Low | Coverage reporting | `.future` line coverage |
