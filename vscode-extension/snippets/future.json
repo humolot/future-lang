@@ -269,5 +269,162 @@
       "tts.speak(\"${1:Hello world}\")"
     ],
     "description": "Speak text aloud via TTS"
+  },
+
+  "Server GET route": {
+    "prefix": ["server.get", "sget"],
+    "body": [
+      "server.get(\"${1:/path}\")",
+      "\t${0:# handle request}",
+      "end"
+    ],
+    "description": "HTTP GET route handler (implicit req variable)"
+  },
+
+  "Server POST route": {
+    "prefix": ["server.post", "spost"],
+    "body": [
+      "server.post(\"${1:/path}\")",
+      "\t${2:name} = req.body.${3:field}",
+      "\t${0:# handle request}",
+      "end"
+    ],
+    "description": "HTTP POST route handler (implicit req variable)"
+  },
+
+  "Server PUT route": {
+    "prefix": ["server.put", "sput"],
+    "body": [
+      "server.put(\"${1:/path/:id}\")",
+      "\t${2:id} = req.params.id",
+      "\t${0:# handle request}",
+      "end"
+    ],
+    "description": "HTTP PUT route handler"
+  },
+
+  "Server DELETE route": {
+    "prefix": ["server.delete", "sdel"],
+    "body": [
+      "server.delete(\"${1:/path/:id}\")",
+      "\t${2:id} = req.params.id",
+      "\t${0:# handle request}",
+      "end"
+    ],
+    "description": "HTTP DELETE route handler"
+  },
+
+  "Server listen": {
+    "prefix": ["server.listen", "slisten"],
+    "body": [
+      "server.listen(${1:3000})",
+      "print \"API running at http://localhost:${1:3000}\""
+    ],
+    "description": "Start the HTTP server"
+  },
+
+  "Full server setup": {
+    "prefix": "serversetup",
+    "body": [
+      "server.get(\"${1:/api/items}\")",
+      "\t${2:items} = db.query(\"SELECT * FROM ${3:items}\")",
+      "\treturn ${2:items}",
+      "end",
+      "",
+      "server.post(\"${1:/api/items}\")",
+      "\t${4:name} = req.body.${4:name}",
+      "\t${5:result} = db.insert(\"${3:items}\", { ${4:name}: ${4:name} })",
+      "\treturn ${5:result}",
+      "end",
+      "",
+      "server.listen(${6:3000})",
+      "print \"API running at http://localhost:${6:3000}\""
+    ],
+    "description": "Full server setup with GET and POST routes"
+  },
+
+  "DB connect SQLite": {
+    "prefix": ["db.connect", "dbconn"],
+    "body": [
+      "db.connect(\"${1:./app.db}\")"
+    ],
+    "description": "Connect to a SQLite database file"
+  },
+
+  "DB connect PostgreSQL": {
+    "prefix": ["db.postgres", "dbpg"],
+    "body": [
+      "db.connect(\"postgres://${1:user}:${2:pass}@${3:localhost}/${4:mydb}\")"
+    ],
+    "description": "Connect to a PostgreSQL database"
+  },
+
+  "DB connect MySQL": {
+    "prefix": ["db.mysql", "dbmysql"],
+    "body": [
+      "db.connect(\"mysql://${1:user}:${2:pass}@${3:localhost}/${4:mydb}\")"
+    ],
+    "description": "Connect to a MySQL / MariaDB database"
+  },
+
+  "DB exec": {
+    "prefix": ["db.exec", "dbexec"],
+    "body": [
+      "db.exec(\"${1:CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT)}\")"
+    ],
+    "description": "Execute raw SQL (CREATE TABLE, ALTER, etc.)"
+  },
+
+  "DB query": {
+    "prefix": ["db.query", "dbquery"],
+    "body": [
+      "${1:rows} = db.query(\"SELECT * FROM ${2:table} WHERE ${3:col} = ?\", [${4:value}])"
+    ],
+    "description": "SELECT multiple rows"
+  },
+
+  "DB get": {
+    "prefix": ["db.get", "dbget"],
+    "body": [
+      "${1:row} = db.get(\"SELECT * FROM ${2:table} WHERE id = ?\", [${3:id}])"
+    ],
+    "description": "SELECT first matching row (or null)"
+  },
+
+  "DB insert": {
+    "prefix": ["db.insert", "dbins"],
+    "body": [
+      "${1:result} = db.insert(\"${2:table}\", { ${3:name}: ${4:value} })",
+      "print ${1:result}.id"
+    ],
+    "description": "Insert a row and get { id, changes }"
+  },
+
+  "DB update": {
+    "prefix": ["db.update", "dbupd"],
+    "body": [
+      "db.update(\"${1:table}\", { ${2:col}: ${3:value} }, \"id = ?\", [${4:id}])"
+    ],
+    "description": "Update rows matching a WHERE clause"
+  },
+
+  "DB delete": {
+    "prefix": ["db.delete", "dbdel"],
+    "body": [
+      "db.delete(\"${1:table}\", \"id = ?\", [${2:id}])"
+    ],
+    "description": "Delete rows matching a WHERE clause"
+  },
+
+  "Full DB setup": {
+    "prefix": "dbsetup",
+    "body": [
+      "db.connect(\"${1:./app.db}\")",
+      "db.exec(\"CREATE TABLE IF NOT EXISTS ${2:items} (id INTEGER PRIMARY KEY AUTOINCREMENT, ${3:name} TEXT)\")",
+      "",
+      "${4:rows} = db.query(\"SELECT * FROM ${2:items}\")",
+      "${5:result} = db.insert(\"${2:items}\", { ${3:name}: \"${6:value}\" })"
+    ],
+    "description": "Full database setup: connect, create table, query, insert"
   }
 }

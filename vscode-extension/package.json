@@ -2,7 +2,7 @@
   "name": "future-lang-vscode",
   "displayName": "Future Lang",
   "description": "Syntax highlighting and snippets for the Future programming language",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "publisher": "humolot",
   "license": "MIT",
   "engines": {

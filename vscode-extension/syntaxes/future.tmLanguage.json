@@ -99,7 +99,7 @@
 
     "namespace-call": {
       "comment": "Highlights ai.ask( or http.get( — full method-call pattern",
-      "match": "\\b(ai|http|mqtt|tts|rag|vision|home|memory|schedule|system|device|math|assert)\\.(\\w+)(?=\\s*\\()",
+      "match": "\\b(ai|http|mqtt|tts|rag|vision|home|memory|schedule|system|device|math|assert|server|db)\\.(\\w+)(?=\\s*\\()",
       "captures": {
         "1": { "name": "support.class.future" },
         "2": { "name": "support.function.builtin.future" }
@@ -110,7 +110,7 @@
       "comment": "Highlights namespace.prop access and bare namespace names",
       "patterns": [
         {
-          "match": "\\b(ai|http|mqtt|tts|rag|vision|home|memory|schedule|system|device|math|assert)\\.(\\w+)",
+          "match": "\\b(ai|http|mqtt|tts|rag|vision|home|memory|schedule|system|device|math|assert|server|db)\\.(\\w+)",
           "captures": {
             "1": { "name": "support.class.future" },
             "2": { "name": "variable.other.property.future" }
@@ -118,7 +118,7 @@
         },
         {
           "name": "support.class.future",
-          "match": "\\b(ai|http|mqtt|tts|rag|vision|home|memory|schedule|system|device|math|assert)\\b"
+          "match": "\\b(ai|http|mqtt|tts|rag|vision|home|memory|schedule|system|device|math|assert|server|db)\\b"
         }
       ]
     },
