@@ -23,7 +23,7 @@ import { format } from './formatter.js';
 import { FutureError } from './errors.js';
 import { buildSourceMap } from './sourcemap.js';
 
-const VERSION = '0.6.3';
+const VERSION = '0.6.4';
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const RUNTIME_INDEX = join(PROJECT_ROOT, 'runtime', 'index.js');
 
@@ -294,6 +294,8 @@ async function cmdRun(file) {
   const tmp = join(tempDir, `future-${process.pid}-${Date.now()}.mjs`);
   writeFileSync(tmp, js, 'utf8');
   const depTmps = [...pathMap.values()].map((u) => fileURLToPath(u));
+  // Run with CWD = script directory so system.read/exec resolve paths correctly.
+  process.chdir(dirname(path));
   try {
     await import(pathToFileURL(tmp).href);
     return 0;
