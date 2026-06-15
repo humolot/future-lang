@@ -1,10 +1,11 @@
 {
   "name": "future-lang-vscode",
   "displayName": "Future Lang",
-  "description": "Syntax highlighting and snippets for the Future programming language",
-  "version": "0.5.0",
+  "description": "Syntax highlighting, snippets, and language server for the Future programming language",
+  "version": "0.6.0",
   "publisher": "humolot",
   "license": "MIT",
+  "main": "./dist/extension.js",
   "engines": {
     "vscode": "^1.75.0"
   },
@@ -18,7 +19,8 @@
     "ai",
     "iot",
     "language",
-    "transpiler"
+    "transpiler",
+    "lsp"
   ],
   "repository": {
     "type": "git",
@@ -28,6 +30,9 @@
   "bugs": {
     "url": "https://github.com/humolot/future-lang/issues"
   },
+  "activationEvents": [
+    "onLanguage:future"
+  ],
   "contributes": {
     "languages": [
       {
@@ -56,7 +61,14 @@
       }
     ]
   },
+  "dependencies": {
+    "future-lang": "^0.5.3",
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
   "devDependencies": {
-    "@vscode/vsce": "^3.9.2"
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.1"
   }
 }

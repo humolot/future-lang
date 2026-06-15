@@ -1,4 +1,12 @@
 .vscode/**
-node_modules/**
 *.vsix
 .gitignore
+build.js
+server/**
+extension.js
+node_modules/**
+!node_modules/vscode-languageserver/**
+!node_modules/vscode-languageserver-textdocument/**
+!node_modules/vscode-languageserver-protocol/**
+!node_modules/vscode-languageserver-types/**
+!node_modules/vscode-jsonrpc/**
