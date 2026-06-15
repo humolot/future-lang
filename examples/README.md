@@ -4,6 +4,28 @@ Real, working examples using free public APIs.
 
 ## No API key required
 
+### `system-dashboard.future` — Real-time web dashboard ⭐
+
+A dark-theme web UI served at `http://localhost:3000`. Shows live memory usage (with animated progress bar), CPU cores, uptime, hostname, platform, and Node.js version — refreshed every 3 seconds.
+Includes an AI chat panel: configure any provider and chat with your system assistant right in the browser.
+
+Demonstrates: `server.get/post`, `system.exec`, `system.read`, `ai.ask`, `ai.configure`, HTML auto Content-Type.
+
+```bash
+future run examples/system-dashboard.future
+# Open http://localhost:3000
+```
+
+Configure AI (optional — edit `system-dashboard.future`):
+```future
+ai.configure({ provider: "venice",    apiKey: "your-key", model: "llama-3.3-70b" })
+ai.configure({ provider: "openai",    apiKey: "sk-...",   model: "gpt-4o-mini" })
+ai.configure({ provider: "anthropic", apiKey: "sk-ant-..." })
+ai.configure({ provider: "ollama",    apiKey: "ollama",   model: "llama3.2" })
+```
+
+---
+
 ### `crypto-tracker.future` — Live crypto prices
 Fetches BTC, ETH, and SOL in real time from the [Coinbase API](https://api.coinbase.com/v2/prices/BTC-USD/spot).
 Demonstrates: `http.get`, `memory.set/get`, `try/catch`.

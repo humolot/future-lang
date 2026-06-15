@@ -4,7 +4,44 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.6.2 → v0.6.3 (current — System Dashboard example, HTML auto Content-Type)
+## v0.6.3 → v0.6.4 (current — bug fixes: script CWD, `ai.configure` object form)
+
+**No breaking changes.**
+
+### `future run` now sets CWD to the script's directory
+
+Previously, `system.read`, `system.exec`, and any relative path inside a script resolved from wherever the `future` command was invoked. This caused ENOENT errors when running scripts from a parent directory:
+
+```bash
+# Before — ENOENT: system-dashboard.html not found in D:\project
+future run examples/system-dashboard.future
+
+# After — works from anywhere
+future run examples/system-dashboard.future
+```
+
+The CLI now changes the working directory to the script's own folder before executing. No changes to your code are needed.
+
+### `ai.configure` now accepts an object
+
+`ai.configure()` now accepts either positional arguments or a config object:
+
+```future
+# Object form (new — recommended for clarity)
+ai.configure({ provider: "venice",    apiKey: "your-key", model: "llama-3.3-70b" })
+ai.configure({ provider: "openai",    apiKey: "sk-...",   model: "gpt-4o-mini" })
+ai.configure({ provider: "anthropic", apiKey: "sk-ant-...", model: "claude-haiku-4-5-20251001" })
+ai.configure({ provider: "ollama",    apiKey: "ollama",   model: "llama3.2" })
+
+# Positional form (still supported)
+ai.configure("venice", "your-key", "llama-3.3-70b")
+```
+
+Both forms are equivalent. Existing code using the positional form continues to work unchanged.
+
+---
+
+## v0.6.2 → v0.6.3 (System Dashboard example, HTML auto Content-Type)
 
 **No breaking changes.**
 
@@ -13,8 +50,7 @@ All releases are **additive only**. No existing Future program has ever required
 A real-time web dashboard you can run locally in one command:
 
 ```bash
-cd examples
-future run system-dashboard.future
+future run examples/system-dashboard.future
 # Open http://localhost:3000
 ```
 

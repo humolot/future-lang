@@ -231,7 +231,7 @@ mqtt.publish("home/livingroom/light", "on")
 | Namespace  | Functions | Notes |
 |------------|-----------|-------|
 | `http`     | `get(url)`, `post(url, body)`, `configure(opts)` | Parses JSON automatically; throws `HttpError` with `.status`, `.code`, `.body` |
-| `ai`       | `ask(prompt, opts?)`, `chat(messages, opts?)`, `embed(text)`, `stream(prompt, cb, opts?)`, `configure(provider, key)` | opts: `{ temperature, max_tokens, model }`; throws `AiError` |
+| `ai`       | `ask(prompt, opts?)`, `chat(messages, opts?)`, `embed(text)`, `stream(prompt, cb, opts?)`, `configure(provider, key)` or `configure({ provider, apiKey, model })` | opts: `{ temperature, max_tokens, model }`; throws `AiError` |
 | `server`   | Route blocks (`get/post/put/patch/delete`), `listen(port)`, `close()` | HTTP server; implicit `req` in route body |
 | `db`       | `connect(url)`, `open(path)`, `exec(sql)`, `query(sql, p?)`, `get(sql, p?)`, `insert(t, data)`, `update(t, data, w, p?)`, `delete(t, w, p?)`, `close()` | SQLite · PostgreSQL · MySQL — driver auto-detected from URL |
 | `tts`      | `speak(text)` | System engine (`say` / SAPI / `espeak-ng`) |
@@ -262,7 +262,13 @@ FUTURE_VECTOR_DB=memory          # memory | file | qdrant
 ## AI configuration
 
 ```future
-# Provider selection
+# Provider selection — object form (recommended)
+ai.configure({ provider: "openai",    apiKey: "sk-...",      model: "gpt-4o-mini" })
+ai.configure({ provider: "venice",    apiKey: "vn-...",      model: "llama-3.3-70b" })
+ai.configure({ provider: "anthropic", apiKey: "sk-ant-...",  model: "claude-haiku-4-5-20251001" })
+ai.configure({ provider: "ollama",    apiKey: "ollama",      model: "llama3.2" })
+
+# Positional form (also supported)
 ai.configure("openai", "sk-...")
 ai.configure("ollama")           # local, no key needed
 
@@ -620,6 +626,7 @@ Ready-to-run programs in the [`examples/`](examples/) folder:
 | File | What it shows |
 |------|---------------|
 | [`hello.future`](examples/hello.future) | Variables, string interpolation, `ai.ask` |
+| [`system-dashboard.future`](examples/system-dashboard.future) | **Live web dashboard** — real-time system stats + AI chat in the browser |
 | [`api-server.future`](examples/api-server.future) | REST API with `server.*` and `db.*` |
 | [`ai-server.future`](examples/ai-server.future) | AI-powered REST API with Venice AI |
 | [`assistant.future`](examples/assistant.future) | Multi-turn AI chat |
@@ -628,7 +635,7 @@ Ready-to-run programs in the [`examples/`](examples/) folder:
 | [`crypto-tracker.future`](examples/crypto-tracker.future) | Polling HTTP API every 30 minutes |
 | [`hacker-news.future`](examples/hacker-news.future) | Fetch and display live HN top stories |
 | [`weather-now.future`](examples/weather-now.future) | Real-time weather via HTTP |
-| [`dashboard.future`](examples/dashboard.future) | HTTP server with dynamic HTML |
+| [`dashboard.future`](examples/dashboard.future) | CLI dashboard — weather, crypto, AI tip |
 | [`pokemon-ai.future`](examples/pokemon-ai.future) | Combining REST API + AI commentary |
 
 Run any example:

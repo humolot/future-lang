@@ -280,8 +280,12 @@ No `async`/`await` needed — the compiler handles it. Any namespace call switch
 answer  = ai.ask("What is the capital of France?")
 reply   = ai.chat([{ role: "user"  content: "Hello" }])
 embed   = ai.embed("text to embed")
-ai.configure("openai", "sk-...")
-ai.configure("ollama")
+ai.configure({ provider: "openai",    apiKey: "sk-...",   model: "gpt-4o-mini" })
+ai.configure({ provider: "venice",    apiKey: "vn-...",   model: "llama-3.3-70b" })
+ai.configure({ provider: "anthropic", apiKey: "sk-ant-..." })
+ai.configure({ provider: "ollama",    apiKey: "ollama",   model: "llama3.2" })
+ai.configure("openai", "sk-...")  # positional form still supported
+ai.configure("ollama")            # local, no key
 
 # Structured extraction — returns a parsed object
 person = ai.extract("John is 30 years old and lives in Lisbon", {
