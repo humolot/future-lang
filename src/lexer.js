@@ -57,6 +57,7 @@ const ONE_CHAR_OPS = new Map([
   ['-', 'MINUS'],
   ['*', 'STAR'],
   ['/', 'SLASH'],
+  ['%', 'PERCENT'],
   ['.', 'DOT'],
   ['(', 'LPAREN'],
   [')', 'RPAREN'],
@@ -169,7 +170,20 @@ export class Lexer {
   }
 
   readString(line, column) {
-    const quote = this.advance(); // opening quote
+    const quote = this.advance(); // opening " or '
+
+    // Triple-quote multi-line string: """ or '''
+    if (quote === '"' && this.peek() === '"' && this.peek(1) === '"') {
+      this.advance(); // 2nd "
+      this.advance(); // 3rd "
+      return this.readTripleString(line, column, '"');
+    }
+    if (quote === "'" && this.peek() === "'" && this.peek(1) === "'") {
+      this.advance(); // 2nd '
+      this.advance(); // 3rd '
+      return this.readTripleString(line, column, "'");
+    }
+
     let value = '';
     while (!this.isAtEnd() && this.peek() !== quote) {
       let ch = this.advance();
@@ -186,6 +200,24 @@ export class Lexer {
     }
     this.advance(); // closing quote
     return new Token('STRING', value, line, column);
+  }
+
+  readTripleString(line, column, quote) {
+    // Strip optional leading newline (Python-style)
+    if (this.peek() === '\n') this.advance();
+    let value = '';
+    while (!this.isAtEnd()) {
+      if (this.peek() === quote && this.peek(1) === quote && this.peek(2) === quote) {
+        this.advance(); this.advance(); this.advance(); // closing triple quote
+        return new Token('STRING', value, line, column);
+      }
+      let ch = this.advance();
+      if (ch === '\\') {
+        ch = unescape(this.advance());
+      }
+      value += ch;
+    }
+    throw new FutureError('Unterminated multi-line string', line, column, 'lex');
   }
 
   readIdentifier(line, column) {

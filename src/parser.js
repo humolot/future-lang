@@ -399,7 +399,7 @@ export class Parser {
 
   parseMultiplicative() {
     let left = this.parseUnary();
-    while (this.check('STAR') || this.check('SLASH')) {
+    while (this.check('STAR') || this.check('SLASH') || this.check('PERCENT')) {
       const op = this.advance();
       left = AST.BinaryExpression(op.value, left, this.parseUnary(), op.line, op.column);
     }

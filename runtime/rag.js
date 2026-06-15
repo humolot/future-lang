@@ -92,3 +92,19 @@ export async function indexUrl(url) {
 export function stats() {
   return _default.stats();
 }
+
+/**
+ * Delete a document chunk by its ID from the default knowledge base.
+ * @param {string} id  Chunk ID (from the internal `name:index` format).
+ */
+async function ragDelete(id) {
+  return _default.delete(String(id));
+}
+export { ragDelete as delete };
+
+/**
+ * Clear all documents from the default knowledge base.
+ */
+export async function clear() {
+  return _default.clear();
+}

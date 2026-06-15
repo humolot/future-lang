@@ -71,8 +71,10 @@ args        = (expression ("," expression)*)?
 - Blocks end with `end` — NO curly braces, NO semicolons
 - `#` starts a line comment
 - Strings: `"double"` or `'single'`
+- Multi-line strings: `"""..."""` or `'''...'''` — first newline stripped; interpolation and escapes work inside
 - String interpolation: `"Hello, {name}!"` — any `{identifier}` or `{identifier.prop}`
 - Escape literal brace: `\{`
+- Modulo: `a % b` — same precedence as `*` and `/`
 - `null` and `none` are the same
 - Commas in lists: required — `[1, 2, 3]`
 - Commas in objects: optional — `{ name: "Alice"  age: 30 }` or `{ name: "Alice", age: 30 }`
@@ -370,7 +372,22 @@ every "30m"
     print data.count
 end
 
-# schedule.once and schedule.cron also available
+# Run once after a delay
+schedule.once("10s", function()
+    print "done"
+end)
+
+# Cancel a task
+task = schedule.every("5s", function()
+    print "tick"
+end)
+schedule.cancel(task)
+
+# List all active tasks
+tasks = schedule.list()
+for t in tasks
+    print "{t.type}: {t.interval}"
+end
 ```
 
 ### `http`
@@ -495,7 +512,28 @@ assert.throws(function()
 end, "divide")
 ```
 
-### `system`, `rag`, `vision`, `home`, `device`
+### `rag`
+```
+rag.index(["doc one", "doc two"])
+answer = rag.query("What is doc one about?")
+stats = rag.stats()   # { name, chunks, vectors }
+
+rag.indexFile("manual.txt")
+rag.indexUrl("https://docs.example.com")
+
+# Delete a chunk by ID
+rag.delete("default:0")
+
+# Clear the entire default knowledge base
+rag.clear()
+
+# Named knowledge bases (isolated vector stores)
+kb = rag.create("legal")
+kb.index(["Contract clause A...", "Contract clause B..."])
+answer = kb.query("What are the payment terms?")
+```
+
+### `system`, `vision`, `home`, `device`
 See [README.md](README.md) for full API tables.
 
 ### `math`

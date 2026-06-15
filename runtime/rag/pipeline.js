@@ -76,11 +76,23 @@ export function createPipeline(name = 'default', opts = {}) {
     return provider.ask(prompt);
   }
 
+  async function deleteDoc(id) {
+    await store.delete(String(id));
+    totalChunks = Math.max(0, totalChunks - 1);
+  }
+
+  async function clear() {
+    await store.clear();
+    totalChunks = 0;
+  }
+
   return {
     name,
     index,
     query,
     store,
     stats: () => ({ name, chunks: totalChunks, vectors: store.size() }),
+    delete: deleteDoc,
+    clear,
   };
 }

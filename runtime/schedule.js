@@ -2,7 +2,15 @@
 // Intervals can be a number (milliseconds) or a human-readable string: "5s", "30m", "2h".
 // Cron support requires the optional `node-cron` package.
 
-const handles = [];
+// id → { id, handle, type, interval, label, createdAt }
+const _tasks = new Map();
+let _nextId = 1;
+
+function _register(handle, type, interval, label) {
+  const id = _nextId++;
+  _tasks.set(handle, { id, handle, type, interval: interval ?? null, label: label ?? null, createdAt: Date.now() });
+  return handle;
+}
 
 /**
  * Run `callback` repeatedly every `interval`.
@@ -15,8 +23,7 @@ export async function every(interval, callback) {
   const handle = setInterval(async () => {
     try { await callback(); } catch (e) { console.error('[schedule.every]', e.message); }
   }, ms);
-  handles.push(handle);
-  return handle;
+  return _register(handle, 'interval', interval, null);
 }
 
 /**
@@ -46,7 +53,7 @@ export async function cron(expression, callback) {
   try {
     const mod = await import('node-cron');
     const task = mod.default.schedule(String(expression), callback);
-    handles.push(task);
+    _register(task, 'cron', String(expression), null);
     return task;
   } catch {
     console.warn(
@@ -55,6 +62,33 @@ export async function cron(expression, callback) {
     );
     return null;
   }
+}
+
+/**
+ * Cancel a scheduled task returned by every(), once(), or cron().
+ * @param {any} handle  The value returned by any schedule function.
+ */
+export function cancel(handle) {
+  if (!handle) return;
+  const meta = _tasks.get(handle);
+  if (meta) {
+    if (meta.type === 'interval') clearInterval(handle);
+    else if (meta.type === 'timeout') clearTimeout(handle);
+    else if (typeof handle?.stop === 'function') handle.stop();
+    _tasks.delete(handle);
+  } else {
+    try { clearInterval(handle); clearTimeout(handle); } catch {}
+  }
+}
+
+/**
+ * List all active scheduled tasks.
+ * @returns {{ id: number, type: string, interval: string|number|null, label: string|null, createdAt: number }[]}
+ */
+export function list() {
+  return [..._tasks.values()].map(({ id, type, interval, label, createdAt }) => ({
+    id, type, interval, label, createdAt,
+  }));
 }
 
 // --- helpers ---

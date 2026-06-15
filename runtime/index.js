@@ -258,6 +258,18 @@ export const manifest = {
       returns: 'object',
       async: false,
     },
+    delete: {
+      description: 'Delete a chunk from the default knowledge base by its ID',
+      params: [{ name: 'id', type: 'string' }],
+      returns: 'void',
+      async: true,
+    },
+    clear: {
+      description: 'Remove all indexed documents from the default knowledge base',
+      params: [],
+      returns: 'void',
+      async: true,
+    },
   },
 
   vision: {
@@ -396,6 +408,18 @@ export const manifest = {
       returns: 'any',
       async: true,
     },
+    cancel: {
+      description: 'Cancel a scheduled task returned by every(), once(), or cron()',
+      params: [{ name: 'handle', type: 'any' }],
+      returns: 'void',
+      async: false,
+    },
+    list: {
+      description: 'List all active scheduled tasks with their type, interval, and creation time',
+      params: [],
+      returns: 'array',
+      async: false,
+    },
   },
 
   system: {
@@ -525,7 +549,7 @@ runtime.listFunctions = (mod) => {
  * Suitable for AI agent discovery or documentation generation.
  */
 runtime.describe = () => ({
-  version: '0.6.0',
+  version: '0.6.1',
   modules: [...MODULE_NAMES],
   manifest,
 });

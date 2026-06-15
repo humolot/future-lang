@@ -4,7 +4,72 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.5.3 → v0.6.0 (current — AI extraction, HTTP verbs, persistent memory, Qdrant, test isolation)
+## v0.6.0 → v0.6.1 (current — multi-line strings, % operator, schedule.cancel/list, rag.delete/clear)
+
+**No breaking changes.**
+
+### Multi-line strings — `"""..."""` and `'''...'''`
+
+```future
+poem = """
+Roses are red,
+Violets are blue,
+Future is simple,
+And async too.
+"""
+print poem
+```
+
+The optional first newline after `"""` is stripped (Python-style). Escape sequences (`\n`, `\t`, `{…}` interpolation) all work inside triple-quoted strings.
+
+### `%` modulo operator
+
+```future
+remainder = 17 % 5
+print remainder   # 2
+
+even = n % 2 == 0
+```
+
+### `schedule.cancel(handle)` — stop a task
+
+```future
+task = schedule.every("5s", function()
+    print "tick"
+end)
+
+schedule.cancel(task)
+```
+
+Works with tasks returned by `every()`, `once()`, and `cron()`.
+
+### `schedule.list()` — active tasks
+
+```future
+tasks = schedule.list()
+for t in tasks
+    print t.type   # "interval" | "timeout" | "cron"
+    print t.interval
+end
+```
+
+### `rag.delete(id)` — remove a chunk
+
+```future
+rag.delete("default:0")
+```
+
+### `rag.clear()` — reset the knowledge base
+
+```future
+rag.index(["doc A", "doc B"])
+rag.clear()
+# knowledge base is now empty
+```
+
+---
+
+## v0.5.3 → v0.6.0 (AI extraction, HTTP verbs, persistent memory, Qdrant, test isolation)
 
 **No breaking changes.**
 

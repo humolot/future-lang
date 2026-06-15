@@ -15,9 +15,9 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | `input(prompt)` built-in | ✅ | stdin (Node.js) / `window.prompt` (browser) |
 | `while condition ... end` | ✅ | Condition-based loop |
 | `null` / `none` literals | ✅ | Both compile to JS `null` |
-| Multi-line strings | 📋 | Strings must be single-line today |
+| Multi-line strings | ✅ | Triple-quote syntax `"""..."""` or `'''...'''` |
 | String `+` concatenation | ✅ | Works via binary `+` operator |
-| Integer division / modulo | 📋 | `math.trunc(a / b)` workaround for now |
+| Integer division / modulo | ✅ | `%` modulo operator now supported; integer division: `math.floor(a / b)` |
 | `use "other.future"` imports | ✅ | Named + namespace imports; npm packages; recursive deps |
 | `else if` chains | ✅ | One `end` for the whole chain |
 | Reserved namespace protection | ✅ | Compile-time error if reserved name is reassigned |
@@ -68,7 +68,8 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | Vector store: Qdrant | ✅ | Set FUTURE_VECTOR_DB=qdrant — auto-creates collection |
 | Vector store: Pinecone / Weaviate | 📋 | Stubs exist |
 | Source attribution in query results | 📋 | Return which chunks matched and their source |
-| `rag.delete(id)` | 📋 | Remove a document from the index |
+| `rag.delete(id)` | ✅ | Remove a chunk from the index by ID |
+| `rag.clear()` | ✅ | Remove all documents from the default knowledge base |
 
 ---
 
@@ -155,8 +156,8 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | `schedule.once(delay, cb)` | ✅ | Run once after delay |
 | `schedule.cron(expr, cb)` | ✅ | Requires optional `node-cron` package |
 | `every "30m" ... end` syntax | ✅ | Compiles to `schedule.every` |
-| `schedule.cancel(handle)` | 📋 | Stop a recurring task |
-| `schedule.list()` | 📋 | List active tasks |
+| `schedule.cancel(handle)` | ✅ | Stop a recurring task |
+| `schedule.list()` | ✅ | List active tasks with type, interval, and creation time |
 
 ---
 
@@ -331,7 +332,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | `FUTURE_FOR_LLMS.md` | ✅ | BNF grammar + all APIs for AI code assistants |
 | npm publish (`future-lang`) | ✅ | Public — `npm install -g future-lang` |
 | VSCode extension | ✅ | Syntax highlighting + snippets — [Marketplace](https://marketplace.visualstudio.com/items?itemName=humolot.future-lang-vscode) |
-| Language Server (LSP) | 📋 | Full editor integration |
+| Language Server (LSP) | ✅ | Completions, hover, signatures in VS Code (v0.6.0+) |
 
 ---
 
@@ -343,14 +344,18 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | ✅ Done | HTTP server (`server.*`) | Build REST APIs in Future |
 | ✅ Done | SQLite database (`db.*`) | Persistent storage with no cloud dependency |
 | ✅ Done | Array index access (`expr[n]`) | Access rows[0], items[i], etc. |
-| 🔴 Critical | Language Server (LSP) | Completions and hover for all IDEs |
-| 🟠 High | `ai.extract(text, schema)` | Structured output is the #1 AI use case |
-| 🟠 High | Test isolation (separate process) | Prevents test state leakage |
-| 🟠 High | `assert.throws(fn)` | Needed for error-handling tests |
+| ✅ Done | Language Server (LSP) | Completions and hover in VS Code |
+| ✅ Done | `ai.extract/classify` | Structured output and classification |
+| ✅ Done | Test isolation + `assert.throws` | Isolated child-process tests |
+| ✅ Done | `http.put/patch/delete` | Complete HTTP client |
+| ✅ Done | Persistent memory + Qdrant | Survives restarts, cloud vector store |
+| ✅ Done | Multi-line strings (`"""`) | Multi-line text literals |
+| ✅ Done | `%` modulo operator | Arithmetic completeness |
+| ✅ Done | `schedule.cancel/list` | Full lifecycle control |
+| ✅ Done | `rag.delete/clear` | Selective and full KB reset |
 | 🟡 Medium | Home Assistant REST API | Most HA users don't run MQTT |
-| 🟡 Medium | Persistent memory / device registry | Survives process restarts |
 | 🟡 Medium | Agent tool-calling loop (ReAct) | True autonomous agents |
-| 🟡 Medium | `http.put / patch / delete` | Additional HTTP verbs |
-| 🟢 Low | `rag.delete(id)` | Selective document removal |
-| 🟢 Low | REPL | Nice-to-have for exploration |
+| 🟡 Medium | Persistent device registry | Survives process restarts |
+| 🟢 Low | REPL (`future repl`) | Interactive shell |
 | 🟢 Low | Coverage reporting | `.future` line coverage |
+| 🟢 Low | Pinecone / Weaviate adapters | Cloud vector stores |
