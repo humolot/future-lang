@@ -23,6 +23,11 @@ import { resolveProvider, setRuntimeConfig } from './providers/index.js';
  *   ai.configure("anthropic", "sk-ant-...", "claude-sonnet-4-6")
  */
 export function configure(baseUrlOrProvider, apiKey, model) {
+  // Accept object form: ai.configure({ provider, apiKey, model, baseUrl })
+  if (baseUrlOrProvider !== null && typeof baseUrlOrProvider === 'object') {
+    setRuntimeConfig(baseUrlOrProvider);
+    return;
+  }
   const first = String(baseUrlOrProvider);
   // If first arg looks like a URL, treat as OpenAI-compat baseUrl.
   const isUrl = first.startsWith('http');

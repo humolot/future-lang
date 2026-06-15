@@ -1,15 +1,19 @@
 # Future Lang — System Dashboard (Web UI)
 # ─────────────────────────────────────────────────────
 # Usage:
-#   cd examples
-#   future run system-dashboard.future
-#
+#   future run examples/system-dashboard.future
 # Then open http://localhost:3000 in your browser.
-#
-# AI chat requires an API key (optional):
-#   set ANTHROPIC_API_KEY=sk-ant-...   (Windows)
-#   export ANTHROPIC_API_KEY=sk-ant-...  (Linux/Mac)
 # ─────────────────────────────────────────────────────
+
+# Configure your AI provider — pick one and uncomment:
+# ai.configure({ provider: "venice",    apiKey: "your-venice-key",    model: "llama-3.3-70b" })
+# ai.configure({ provider: "openai",    apiKey: "sk-...",             model: "gpt-4o-mini" })
+# ai.configure({ provider: "anthropic", apiKey: "sk-ant-...",         model: "claude-haiku-4-5-20251001" })
+# ai.configure({ provider: "ollama",    apiKey: "ollama",             model: "llama3.2" })
+#
+# Or set environment variables before running:
+#   set FUTURE_AI_PROVIDER=venice
+#   set FUTURE_AI_API_KEY=your-key
 
 # Serve the dashboard HTML page
 server.get("/")
