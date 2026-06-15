@@ -4,7 +4,31 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.6.1 → v0.6.2 (current — persistent device registry, semantic memory search)
+## v0.6.2 → v0.6.3 (current — System Dashboard example, HTML auto Content-Type)
+
+**No breaking changes.**
+
+### System Dashboard example
+
+A real-time web dashboard you can run locally in one command:
+
+```bash
+cd examples
+future run system-dashboard.future
+# Open http://localhost:3000
+```
+
+Shows live memory usage (with progress bar), CPU cores, uptime, hostname, platform, and Node.js version — updated every 3 seconds. Includes an AI chat panel powered by `ai.ask`.
+
+Files added: `examples/system-dashboard.future`, `examples/system-dashboard.html`, `examples/dashboard-stats.mjs`
+
+### HTML auto Content-Type in `server.*`
+
+Route handlers that return a string starting with `<!DOCTYPE` or `<html` now automatically receive `Content-Type: text/html` instead of `text/plain`. All other strings remain `text/plain`. No change to existing behaviour.
+
+---
+
+## v0.6.1 → v0.6.2 (persistent device registry, semantic memory search)
 
 **No breaking changes.**
 

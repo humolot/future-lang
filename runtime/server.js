@@ -114,7 +114,9 @@ export async function listen(port = 3000) {
         nodeRes.writeHead(204);
         nodeRes.end();
       } else if (typeof result === 'string') {
-        nodeRes.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+        const isHtml = result.trimStart().startsWith('<!DOCTYPE') || result.trimStart().startsWith('<html');
+        const ct = isHtml ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8';
+        nodeRes.writeHead(200, { 'Content-Type': ct });
         nodeRes.end(result);
       } else {
         nodeRes.writeHead(200, { 'Content-Type': 'application/json' });

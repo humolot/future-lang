@@ -1,0 +1,36 @@
+# Future Lang — System Dashboard (Web UI)
+# ─────────────────────────────────────────────────────
+# Usage:
+#   cd examples
+#   future run system-dashboard.future
+#
+# Then open http://localhost:3000 in your browser.
+#
+# AI chat requires an API key (optional):
+#   set ANTHROPIC_API_KEY=sk-ant-...   (Windows)
+#   export ANTHROPIC_API_KEY=sk-ant-...  (Linux/Mac)
+# ─────────────────────────────────────────────────────
+
+# Serve the dashboard HTML page
+server.get("/")
+    page = system.read("system-dashboard.html")
+    return page
+end
+
+# Real-time system stats (memory, CPU, uptime, hostname)
+server.get("/api/stats")
+    stats = system.exec(["node", "dashboard-stats.mjs"])
+    return stats
+end
+
+# AI chat endpoint
+server.post("/api/chat")
+    question = req.body.question
+    sys = "You are a helpful assistant inside a system monitoring dashboard. Answer concisely."
+    answer = ai.ask(question, { system: sys })
+    return { answer: answer }
+end
+
+print "Starting Future System Dashboard..."
+server.listen(3000)
+print "Open http://localhost:3000 in your browser"
