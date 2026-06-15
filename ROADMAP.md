@@ -216,7 +216,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | `use "./file.future"` imports | ✅ | Named or namespace imports, recursive deps |
 | `use "npm-pkg" as alias` | ✅ | Import npm packages as namespaces |
 | Reserved namespace protection | ✅ | Compile-time error on redefinition |
-| Multi-line strings | 📋 | Strings must be single-line |
+| Multi-line strings | ✅ | Triple-quote syntax `"""..."""` or `'''...'''` |
 | REPL (`future repl`) | 💡 | Interactive shell with introspection |
 
 ---
