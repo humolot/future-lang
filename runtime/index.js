@@ -378,6 +378,15 @@ export const manifest = {
       returns: 'void',
       async: false,
     },
+    searchSemantic: {
+      description: 'Semantic similarity search using AI embeddings — returns top-k entries most similar to the query. Falls back to keyword vectors when no API key is set.',
+      params: [
+        { name: 'query', type: 'string' },
+        { name: 'topK',  type: 'number', optional: true },
+      ],
+      returns: 'array',
+      async: true,
+    },
   },
 
   schedule: {
@@ -483,6 +492,30 @@ export const manifest = {
       returns: 'array',
       async: false,
     },
+    update: {
+      description: 'Merge changes into an existing device record',
+      params: [{ name: 'name', type: 'string' }, { name: 'changes', type: 'object' }],
+      returns: 'object',
+      async: false,
+    },
+    remove: {
+      description: 'Remove a device from the registry by name',
+      params: [{ name: 'name', type: 'string' }],
+      returns: 'boolean',
+      async: false,
+    },
+    persist: {
+      description: 'Save the device registry to a JSON file (uses FUTURE_DEVICE_FILE if no path given)',
+      params: [{ name: 'filePath', type: 'string', optional: true }],
+      returns: 'void',
+      async: false,
+    },
+    load: {
+      description: 'Load the device registry from a JSON file (uses FUTURE_DEVICE_FILE if no path given)',
+      params: [{ name: 'filePath', type: 'string', optional: true }],
+      returns: 'void',
+      async: false,
+    },
   },
 
   math: {
@@ -549,7 +582,7 @@ runtime.listFunctions = (mod) => {
  * Suitable for AI agent discovery or documentation generation.
  */
 runtime.describe = () => ({
-  version: '0.6.1',
+  version: '0.6.2',
   modules: [...MODULE_NAMES],
   manifest,
 });

@@ -4,7 +4,61 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.6.0 → v0.6.1 (current — multi-line strings, % operator, schedule.cancel/list, rag.delete/clear)
+## v0.6.1 → v0.6.2 (current — persistent device registry, semantic memory search)
+
+**No breaking changes.**
+
+### Persistent device registry
+
+`device.*` now survives process restarts. Same pattern as `memory.*`:
+
+```future
+device.register({ name: "lamp"  type: "light"  location: "living room" })
+device.persist("./devices.json")
+
+# Later, in a new process:
+device.load("./devices.json")
+lamp = device.get("lamp")
+```
+
+Or set `FUTURE_DEVICE_FILE=./devices.json` to auto-load on first use and auto-save on every write.
+
+### `device.update(name, changes)` — patch a device
+
+```future
+device.register({ name: "lamp"  brightness: 50 })
+device.update("lamp", { brightness: 100  on: true })
+```
+
+### `device.remove(name)` — deregister a device
+
+```future
+removed = device.remove("lamp")   # true if existed
+```
+
+### `memory.searchSemantic(query, topK?)` — similarity search
+
+Embeds the query and all stored values, returning the most semantically similar entries:
+
+```future
+memory.set("note1", "the cat sat on the mat")
+memory.set("note2", "quantum physics equations")
+memory.set("note3", "dogs and cats are pets")
+
+results = memory.searchSemantic("feline animals", 2)
+for r in results
+    print "{r.key}: {r.score}"
+end
+# note1 and note3 rank higher than note2
+```
+
+- Requires `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / Ollama for real embeddings
+- Falls back to keyword-vector similarity automatically when no API key is set
+- Embeddings are cached per key — invalidated automatically on `set()` / `delete()` / `forget()`
+
+---
+
+## v0.6.0 → v0.6.1 (multi-line strings, % operator, schedule.cancel/list, rag.delete/clear)
 
 **No breaking changes.**
 

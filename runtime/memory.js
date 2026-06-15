@@ -10,6 +10,9 @@ import { resolve } from 'node:path';
 const store = new Map();
 let _loaded = false;
 
+// Embedding cache for semantic search — invalidated on set/delete/forget.
+const _embedCache = new Map(); // key → float[]
+
 function ensureLoaded() {
   if (_loaded) return;
   _loaded = true;
@@ -33,6 +36,7 @@ function autoPersist() {
 export function set(key, value) {
   ensureLoaded();
   store.set(String(key), value);
+  _embedCache.delete(String(key)); // invalidate stale embedding
   autoPersist();
   return value;
 }
@@ -47,7 +51,7 @@ export function get(key) {
 function memDelete(key) {
   ensureLoaded();
   const existed = store.delete(String(key));
-  if (existed) autoPersist();
+  if (existed) { _embedCache.delete(String(key)); autoPersist(); }
   return existed;
 }
 export { memDelete as delete };
@@ -88,7 +92,7 @@ export function forget(pattern) {
     : (k) => k.includes(String(pattern));
   let removed = 0;
   for (const key of [...store.keys()]) {
-    if (test(key)) { store.delete(key); removed++; }
+    if (test(key)) { store.delete(key); _embedCache.delete(key); removed++; }
   }
   if (removed > 0) autoPersist();
   return removed;
@@ -118,4 +122,50 @@ export function load(filePath) {
     for (const [k, v] of Object.entries(data)) store.set(k, v);
     _loaded = true;
   } catch { /* file doesn't exist — start empty */ }
+}
+
+/**
+ * Semantic similarity search using AI embeddings.
+ * Embeds the query and all stored values, then returns the top-k most similar entries.
+ * Embeddings are cached per key and invalidated when a key is updated or deleted.
+ *
+ * Falls back to keyword search (no API key needed) when no AI provider is configured.
+ *
+ * Future example:
+ *   memory.set("note1", "the cat sat on the mat")
+ *   memory.set("note2", "quantum physics equations")
+ *   results = memory.searchSemantic("feline animals")
+ *   # → [{ key: "note1", value: "...", score: 0.91 }]
+ *
+ * @param {string} query
+ * @param {number} [topK=5]
+ * @returns {Promise<Array<{ key: string, value: any, score: number }>>}
+ */
+export async function searchSemantic(query, topK = 5) {
+  ensureLoaded();
+  if (store.size === 0) return [];
+
+  const { resolveProvider } = await import('./providers/index.js');
+  const { cosineSim, keywordVector } = await import('./providers/util.js');
+  const provider = resolveProvider();
+
+  const embed = provider
+    ? (text) => provider.embed(text)
+    : (text) => Promise.resolve(keywordVector(text));
+
+  const queryVec = await embed(String(query));
+
+  const scored = [];
+  for (const [key, value] of store) {
+    if (!_embedCache.has(key)) {
+      const text = typeof value === 'string' ? value : JSON.stringify(value);
+      _embedCache.set(key, await embed(text));
+    }
+    const score = cosineSim(queryVec, _embedCache.get(key));
+    scored.push({ key, value, score });
+  }
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
 }

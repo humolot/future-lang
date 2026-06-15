@@ -354,9 +354,17 @@ tts.speak("Hello from Future!")
 memory.set("key", "value")
 val = memory.get("key")
 memory.delete("key")
-results = memory.search("query")
+results = memory.search("query")           # substring search → [{ key, value }]
 memory.forget()          # clear all
 memory.forget("prefix")  # clear matching keys
+
+# Semantic similarity search (uses AI embeddings; falls back to keyword vectors)
+memory.set("note1", "the cat sat on the mat")
+memory.set("note2", "quantum physics equations")
+hits = memory.searchSemantic("feline animals", 2)  # topK=2
+for h in hits
+    print "{h.key}: {h.score}"
+end
 
 # Persistent memory — survives process restarts
 memory.persist("./memory.json")   # save to file
@@ -533,7 +541,21 @@ kb.index(["Contract clause A...", "Contract clause B..."])
 answer = kb.query("What are the payment terms?")
 ```
 
-### `system`, `vision`, `home`, `device`
+### `device`
+```
+device.register({ name: "lamp"  type: "light"  location: "living room" })
+device.update("lamp", { brightness: 80 })
+device.remove("lamp")
+devices = device.list()
+lamp = device.get("lamp")
+
+# Persistence — survives process restarts
+device.persist("./devices.json")   # explicit save
+device.load("./devices.json")      # explicit load
+# Or: set FUTURE_DEVICE_FILE=./devices.json to auto-load/save on every write
+```
+
+### `system`, `vision`, `home`
 See [README.md](README.md) for full API tables.
 
 ### `math`

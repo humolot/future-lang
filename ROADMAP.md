@@ -125,10 +125,10 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | `device.register(config)` | ✅ | In-process registry |
 | `device.get(name)` | ✅ | Look up by name |
 | `device.list()` | ✅ | All registered devices |
-| `device.update(name, changes)` | 📋 | Patch device config |
-| `device.remove(name)` | 📋 | Deregister a device |
+| `device.update(name, changes)` | ✅ | Merge changes into existing device record |
+| `device.remove(name)` | ✅ | Deregister a device |
 | `device.send(name, command)` | 📋 | Send a command to a registered device |
-| Persistent registry (JSON / SQLite) | 📋 | Survives process restarts |
+| Persistent registry (JSON / SQLite) | ✅ | FUTURE_DEVICE_FILE or device.persist()/load() |
 | AWS IoT Core / Azure IoT Hub | 💡 | Cloud-managed fleet |
 
 ---
@@ -143,7 +143,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | `memory.search(query)` | ✅ | Substring match on key + value |
 | `memory.forget(pattern?)` | ✅ | Delete by pattern or clear all |
 | Persistent memory (file / Redis) | ✅ | File-based via memory.persist() / memory.load() or FUTURE_MEMORY_FILE |
-| Semantic memory search | 📋 | Use `ai.embed()` for similarity-based recall |
+| Semantic memory search | ✅ | `memory.searchSemantic(query, topK?)` — embedding + cosine similarity |
 | Memory scoped to agents | 📋 | Namespaced per-agent store |
 
 ---
@@ -353,9 +353,10 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | ✅ Done | `%` modulo operator | Arithmetic completeness |
 | ✅ Done | `schedule.cancel/list` | Full lifecycle control |
 | ✅ Done | `rag.delete/clear` | Selective and full KB reset |
+| ✅ Done | Persistent device registry | FUTURE_DEVICE_FILE + update/remove |
+| ✅ Done | Semantic memory search | `memory.searchSemantic()` with embedding fallback |
 | 🟡 Medium | Home Assistant REST API | Most HA users don't run MQTT |
 | 🟡 Medium | Agent tool-calling loop (ReAct) | True autonomous agents |
-| 🟡 Medium | Persistent device registry | Survives process restarts |
 | 🟢 Low | REPL (`future repl`) | Interactive shell |
 | 🟢 Low | Coverage reporting | `.future` line coverage |
 | 🟢 Low | Pinecone / Weaviate adapters | Cloud vector stores |
