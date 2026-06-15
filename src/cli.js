@@ -15,6 +15,7 @@ import { readFileSync, writeFileSync, unlinkSync, mkdirSync, existsSync, readdir
 import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { tmpdir } from 'node:os';
+import { spawn } from 'node:child_process';
 import process from 'node:process';
 
 import { compile, tokenize, parse } from './index.js';
@@ -22,7 +23,7 @@ import { format } from './formatter.js';
 import { FutureError } from './errors.js';
 import { buildSourceMap } from './sourcemap.js';
 
-const VERSION = '0.5.2';
+const VERSION = '0.6.0';
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const RUNTIME_INDEX = join(PROJECT_ROOT, 'runtime', 'index.js');
 
@@ -433,14 +434,20 @@ async function cmdTest(pattern) {
     writeFileSync(tmp, js, 'utf8');
     const depTmps = [...pathMap.values()].map((u) => fileURLToPath(u));
     try {
-      await import(pathToFileURL(tmp).href);
-      console.log(`  ✓ ${rel}`);
-      passed++;
-    } catch (err) {
-      const isAssert = err.name === 'AssertionError' || err.namespace === 'assert';
-      process.stderr.write(`  ✗ ${rel}\n`);
-      process.stderr.write(`    ${isAssert ? 'AssertionError' : err.name ?? 'Error'}: ${err.message}\n`);
-      failed++;
+      const { code, stdout, stderr: childStderr } = await runInChildProcess(tmp);
+      if (stdout) process.stdout.write(stdout);
+      if (code === 0) {
+        console.log(`  ✓ ${rel}`);
+        passed++;
+      } else {
+        process.stderr.write(`  ✗ ${rel}\n`);
+        if (childStderr) {
+          for (const line of childStderr.trimEnd().split('\n')) {
+            process.stderr.write(`    ${line}\n`);
+          }
+        }
+        failed++;
+      }
     } finally {
       try { unlinkSync(tmp); } catch { /* ignore */ }
       for (const p of depTmps) { try { unlinkSync(p); } catch { /* ignore */ } }
@@ -450,6 +457,21 @@ async function cmdTest(pattern) {
   const total = passed + failed;
   console.log(`\n${passed}/${total} tests passed${failed > 0 ? `, ${failed} failed` : ''}`);
   return failed > 0 ? 1 : 0;
+}
+
+/** Run a compiled .mjs file in an isolated child process. */
+function runInChildProcess(file) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [file], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: process.env,
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.stderr.on('data', (d) => { stderr += d; });
+    child.on('close', (code) => resolve({ code: code ?? 1, stdout, stderr }));
+  });
 }
 
 /** Create a new project scaffold. */

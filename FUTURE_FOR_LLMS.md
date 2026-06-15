@@ -281,6 +281,19 @@ embed   = ai.embed("text to embed")
 ai.configure("openai", "sk-...")
 ai.configure("ollama")
 
+# Structured extraction — returns a parsed object
+person = ai.extract("John is 30 years old and lives in Lisbon", {
+    name: "string"
+    age: "number"
+    city: "string"
+})
+print person.name   # John
+print person.age    # 30
+
+# Zero-shot classification — returns the matching label
+label = ai.classify("I love this product!", ["positive", "negative", "neutral"])
+print label   # positive
+
 # With inference options
 answer = ai.ask("Explain quantum physics", { temperature: 0.2  max_tokens: 200 })
 reply  = ai.chat(messages, { model: "gpt-4o"  temperature: 0.7 })
@@ -302,8 +315,22 @@ end
 data = http.get("https://api.example.com/todos/1")
 print data.title
 
-res = http.post("https://api.example.com/items", { name: "Widget"  price: 9.99 })
+res  = http.post("https://api.example.com/items", { name: "Widget"  price: 9.99 })
+res  = http.put("https://api.example.com/items/1", { name: "Widget Pro" })
+res  = http.patch("https://api.example.com/items/1", { price: 12.99 })
+http.delete("https://api.example.com/items/1")
 print res.id
+
+# Global config (call once at the top of your program)
+http.configure({ headers: { Authorization: "Bearer {token}" }  timeout: 5000 })
+
+# Errors have .status, .code, .url, .body properties
+try
+    data = http.get("https://api.example.com/private")
+catch err
+    print "Status: {err.status}"
+    print "Code: {err.code}"
+end
 ```
 
 ### `mqtt`
@@ -328,6 +355,12 @@ memory.delete("key")
 results = memory.search("query")
 memory.forget()          # clear all
 memory.forget("prefix")  # clear matching keys
+
+# Persistent memory — survives process restarts
+memory.persist("./memory.json")   # save to file
+memory.load("./memory.json")      # load from file
+
+# Or set FUTURE_MEMORY_FILE=./memory.json to auto-load/save on every write
 ```
 
 ### `schedule`
@@ -450,6 +483,16 @@ assert.equal(actual, expected)
 assert.notEqual(a, b)
 assert.deepEqual(obj1, obj2)
 assert.fail("custom message")
+
+# Assert that a function throws
+assert.throws(function()
+    error "boom"
+end)
+
+# Assert the error message contains a string
+assert.throws(function()
+    error "divide by zero"
+end, "divide")
 ```
 
 ### `system`, `rag`, `vision`, `home`, `device`

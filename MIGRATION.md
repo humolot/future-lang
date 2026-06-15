@@ -4,7 +4,84 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.5.2 → v0.5.3 (current — documentation and LLM reference improvements)
+## v0.5.3 → v0.6.0 (current — AI extraction, HTTP verbs, persistent memory, Qdrant, test isolation)
+
+**No breaking changes.**
+
+### `ai.extract(text, schema)` — structured data extraction
+
+Extract typed JSON objects from any text using the AI model:
+
+```future
+person = ai.extract("John is 30 and lives in Lisbon", {
+    name: "string"
+    age: "number"
+    city: "string"
+})
+print person.name   # John
+print person.age    # 30
+```
+
+Returns a parsed object. Strips markdown fences automatically. Throws if the model response cannot be parsed as JSON.
+
+### `ai.classify(text, labels)` — zero-shot classification
+
+```future
+label = ai.classify("I love this!", ["positive", "negative", "neutral"])
+print label   # positive
+```
+
+### `http.put`, `http.patch`, `http.delete` — complete HTTP client
+
+```future
+res = http.put("/api/items/1", { name: "Widget Pro" })
+res = http.patch("/api/items/1", { price: 12.99 })
+http.delete("/api/items/1")
+```
+
+`http.delete` returns `null` on 204 No Content, parsed body otherwise.
+
+### `assert.throws(fn, expectedMessage?)` — exception assertions
+
+```future
+assert.throws(function()
+    error "boom"
+end)
+
+assert.throws(function()
+    error "divide by zero"
+end, "divide")
+```
+
+Works with both sync and async functions. `expectedMessage` is a substring check.
+
+### Test isolation — each test file in its own process
+
+`future test` now spawns a separate Node.js child process per test file. This prevents state leakage between tests and makes failures easier to diagnose.
+
+### `memory.persist(path?)` and `memory.load(path?)` — persistent memory
+
+```future
+memory.set("session", { user: "Alice" })
+memory.persist("./session.json")
+
+# Later, in a new process:
+memory.load("./session.json")
+val = memory.get("session")
+```
+
+Or set `FUTURE_MEMORY_FILE=./session.json` to auto-load on first use and auto-save on every write — no explicit calls needed.
+
+### Qdrant vector store
+
+Set `FUTURE_VECTOR_DB=qdrant` to use Qdrant as the RAG vector backend.
+Optionally set `QDRANT_URL` (default: `http://localhost:6333`), `QDRANT_COLLECTION` (default: `future`), and `QDRANT_API_KEY` for Qdrant Cloud.
+
+Collections are created automatically on first use.
+
+---
+
+## v0.5.2 → v0.5.3 (documentation and LLM reference improvements)
 
 **No breaking changes. No new runtime code.**
 

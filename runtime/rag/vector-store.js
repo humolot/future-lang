@@ -87,18 +87,42 @@ export function createFileStore(filePath) {
 }
 
 // ─── Cloud Adapter Stubs ─────────────────────────────────────────────────────
-// Implement these by creating runtime/rag/qdrant.js, etc. and importing here.
 
 function cloudStub(name) {
   return {
     name,
-    add()    { console.warn(`[vector/${name}] not implemented — add runtime/rag/${name}.js`); },
+    add()    { console.warn(`[vector/${name}] not implemented — set FUTURE_VECTOR_DB=${name} and ensure deps are installed`); },
     search() { console.warn(`[vector/${name}] not implemented`); return []; },
     delete() {},
     clear()  {},
     size()   { return 0; },
     async persist() {},
     async load()    {},
+  };
+}
+
+// ─── Qdrant lazy-loader wrapper ───────────────────────────────────────────────
+// Keeps createVectorStore() synchronous so callers don't need to await it.
+// The real Qdrant store is resolved on the first operation.
+
+function createQdrantLazy(options) {
+  let _store = null;
+  async function store() {
+    if (!_store) {
+      const { createQdrantStore } = await import('./qdrant.js');
+      _store = createQdrantStore(options);
+    }
+    return _store;
+  }
+  return {
+    name: 'qdrant',
+    async add(id, vector, metadata)  { return (await store()).add(id, vector, metadata); },
+    async search(vector, topK)       { return (await store()).search(vector, topK); },
+    async delete(id)                 { return (await store()).delete(id); },
+    async clear()                    { return (await store()).clear(); },
+    async size()                     { return (await store()).size(); },
+    async persist()                  { /* Qdrant persists automatically */ },
+    async load()                     { /* Qdrant persists automatically */ },
   };
 }
 
@@ -109,7 +133,7 @@ export function createVectorStore(options = {}) {
   switch (adapter.toLowerCase()) {
     case 'memory':   return createMemoryStore();
     case 'file':     return createFileStore(options.filePath);
-    case 'qdrant':   return cloudStub('qdrant');
+    case 'qdrant':   return createQdrantLazy(options);
     case 'pinecone': return cloudStub('pinecone');
     case 'weaviate': return cloudStub('weaviate');
     default:

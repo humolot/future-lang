@@ -63,8 +63,39 @@ export async function get(url, headers = {}) {
 
 /** POST a JSON body to a URL. @returns parsed JSON or text. */
 export async function post(url, body, headers = {}) {
+  return _bodyRequest('POST', url, body, headers);
+}
+
+/** PUT a JSON body to a URL. @returns parsed JSON or text. */
+export async function put(url, body, headers = {}) {
+  return _bodyRequest('PUT', url, body, headers);
+}
+
+/** PATCH a JSON body to a URL. @returns parsed JSON or text. */
+export async function patch(url, body, headers = {}) {
+  return _bodyRequest('PATCH', url, body, headers);
+}
+
+/** DELETE a URL. @returns parsed JSON, text, or null (204). */
+async function httpDelete(url, headers = {}) {
   const res = await fetch(url, {
-    method: 'POST',
+    method: 'DELETE',
+    headers: { ...DEFAULT_HEADERS, ..._config.headers, ...headers },
+    signal: buildSignal(),
+  });
+  if (!res.ok) {
+    let errBody;
+    try { errBody = await parseBody(res); } catch { errBody = null; }
+    throw new HttpError(res.status, res.statusText, url, errBody);
+  }
+  if (res.status === 204) return null;
+  return parseBody(res);
+}
+export { httpDelete as delete };
+
+async function _bodyRequest(method, url, body, headers = {}) {
+  const res = await fetch(url, {
+    method,
     headers: { ...DEFAULT_HEADERS, 'content-type': 'application/json', ..._config.headers, ...headers },
     body: typeof body === 'string' ? body : JSON.stringify(body),
     signal: buildSignal(),

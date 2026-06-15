@@ -1,6 +1,6 @@
 # Future — Roadmap
 
-**Version:** 0.5.3 · **Last updated:** 2026-06-15
+**Version:** 0.6.0 · **Last updated:** 2026-06-15
 
 Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 
@@ -45,8 +45,8 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | Provider: Gemini | ✅ | Via Google's OpenAI-compat endpoint |
 | Provider: Venice / Groq / Together | ✅ | Via OpenAI-compat layer |
 | `FUTURE_AI_PROVIDER` env var | ✅ | Switch provider without code change |
-| `ai.extract(text, schema)` | 📋 | Structured JSON extraction with a schema |
-| `ai.classify(text, labels)` | 📋 | Zero-shot classification |
+| `ai.extract(text, schema)` | ✅ | Structured JSON extraction with a schema |
+| `ai.classify(text, labels)` | ✅ | Zero-shot classification |
 
 ---
 
@@ -65,7 +65,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | Keyword vector fallback (offline RAG) | ✅ | Works with no embedding API |
 | Vector store: memory | ✅ | In-process, cosine similarity |
 | Vector store: file (JSON persistence) | ✅ | No native deps, survives restarts |
-| Vector store: Qdrant | 📋 | Stub exists — implement `runtime/rag/qdrant.js` |
+| Vector store: Qdrant | ✅ | Set FUTURE_VECTOR_DB=qdrant — auto-creates collection |
 | Vector store: Pinecone / Weaviate | 📋 | Stubs exist |
 | Source attribution in query results | 📋 | Return which chunks matched and their source |
 | `rag.delete(id)` | 📋 | Remove a document from the index |
@@ -141,7 +141,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | `memory.delete(key)` | ✅ | |
 | `memory.search(query)` | ✅ | Substring match on key + value |
 | `memory.forget(pattern?)` | ✅ | Delete by pattern or clear all |
-| Persistent memory (file / Redis) | 📋 | Survives process restarts |
+| Persistent memory (file / Redis) | ✅ | File-based via memory.persist() / memory.load() or FUTURE_MEMORY_FILE |
 | Semantic memory search | 📋 | Use `ai.embed()` for similarity-based recall |
 | Memory scoped to agents | 📋 | Namespaced per-agent store |
 
@@ -247,7 +247,7 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | `http.post(url, body, headers?)` | ✅ | JSON body; parses response |
 | `http.configure({ headers, timeout })` | ✅ | Global defaults for all requests |
 | Structured `HttpError` (status, code, url, body) | ✅ | Catchable with rich properties |
-| `http.put / patch / delete` | 📋 | Additional HTTP verbs |
+| `http.put / patch / delete` | ✅ | Additional HTTP verbs |
 | Response headers access | 📋 | `res.headers.get("content-type")` |
 
 ---
@@ -302,8 +302,8 @@ Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 | `assert` namespace | ✅ | `ok`, `equal`, `notEqual`, `deepEqual`, `fail` |
 | Per-file pass/fail reporting | ✅ | `✓` / `✗` with error message |
 | Exit code 1 on failure | ✅ | Integrates with CI |
-| Test isolation (separate process) | 📋 | Currently runs in same Node process |
-| `assert.throws(fn)` | 📋 | Assert that a function throws |
+| Test isolation (separate process) | ✅ | Each test file runs in its own child process |
+| `assert.throws(fn)` | ✅ | Assert that a function throws |
 | Coverage reporting | 💡 | Line coverage for `.future` files |
 
 ---

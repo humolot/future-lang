@@ -117,6 +117,24 @@ export const manifest = {
       returns: 'array',
       async: true,
     },
+    extract: {
+      description: 'Extract structured JSON data from text using the AI model — returns a parsed object matching the provided schema',
+      params: [
+        { name: 'text',   type: 'string' },
+        { name: 'schema', type: 'object|string' },
+      ],
+      returns: 'object',
+      async: true,
+    },
+    classify: {
+      description: 'Classify text into one of the provided category labels — returns the matching label string',
+      params: [
+        { name: 'text',   type: 'string' },
+        { name: 'labels', type: 'array' },
+      ],
+      returns: 'string',
+      async: true,
+    },
   },
 
   http: {
@@ -134,6 +152,35 @@ export const manifest = {
       params: [
         { name: 'url', type: 'string' },
         { name: 'body', type: 'any' },
+        { name: 'headers', type: 'object', optional: true },
+      ],
+      returns: 'any',
+      async: true,
+    },
+    put: {
+      description: 'Perform an HTTP PUT request with a JSON body',
+      params: [
+        { name: 'url', type: 'string' },
+        { name: 'body', type: 'any' },
+        { name: 'headers', type: 'object', optional: true },
+      ],
+      returns: 'any',
+      async: true,
+    },
+    patch: {
+      description: 'Perform an HTTP PATCH request with a JSON body',
+      params: [
+        { name: 'url', type: 'string' },
+        { name: 'body', type: 'any' },
+        { name: 'headers', type: 'object', optional: true },
+      ],
+      returns: 'any',
+      async: true,
+    },
+    delete: {
+      description: 'Perform an HTTP DELETE request — returns null on 204, parsed body otherwise',
+      params: [
+        { name: 'url', type: 'string' },
         { name: 'headers', type: 'object', optional: true },
       ],
       returns: 'any',
@@ -307,6 +354,18 @@ export const manifest = {
       returns: 'array',
       async: false,
     },
+    persist: {
+      description: 'Save the in-memory store to a JSON file. Uses FUTURE_MEMORY_FILE env var if no path given',
+      params: [{ name: 'filePath', type: 'string', optional: true }],
+      returns: 'void',
+      async: false,
+    },
+    load: {
+      description: 'Load the store from a JSON file, merging into existing keys. Uses FUTURE_MEMORY_FILE env var if no path given',
+      params: [{ name: 'filePath', type: 'string', optional: true }],
+      returns: 'void',
+      async: false,
+    },
   },
 
   schedule: {
@@ -423,6 +482,7 @@ export const manifest = {
     notEqual:  { description: 'Assert that actual !== expected',                params: [{ name: 'actual', type: 'any' }, { name: 'expected', type: 'any' }, { name: 'msg', type: 'string', optional: true }], returns: 'void', async: false },
     deepEqual: { description: 'Assert deep structural equality',                params: [{ name: 'actual', type: 'any' }, { name: 'expected', type: 'any' }, { name: 'msg', type: 'string', optional: true }], returns: 'void', async: false },
     fail:      { description: 'Unconditionally fail the test with a message',   params: [{ name: 'msg', type: 'string', optional: true }], returns: 'void', async: false },
+    throws:    { description: 'Assert that a function throws an error. Optionally verify the error message contains expectedMessage', params: [{ name: 'fn', type: 'function' }, { name: 'expectedMessage', type: 'string', optional: true }], returns: 'void', async: true },
   },
 
   server: {
@@ -465,7 +525,7 @@ runtime.listFunctions = (mod) => {
  * Suitable for AI agent discovery or documentation generation.
  */
 runtime.describe = () => ({
-  version: '0.5.0',
+  version: '0.6.0',
   modules: [...MODULE_NAMES],
   manifest,
 });

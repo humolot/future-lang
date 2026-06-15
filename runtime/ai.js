@@ -122,6 +122,72 @@ export async function embed(text) {
   return provider.embed(text);
 }
 
+/**
+ * Extract structured data from text using the AI model.
+ * Returns a parsed JSON object matching the provided schema.
+ *
+ * @param {string} text  The text to extract data from
+ * @param {object|string} schema  JSON schema or description of the expected shape
+ * @returns {Promise<object>}
+ *
+ * @example
+ *   data = ai.extract("John is 30 years old", { name: "string", age: "number" })
+ *   print data.name   # John
+ *   print data.age    # 30
+ */
+export async function extract(text, schema) {
+  const schemaStr = typeof schema === 'string' ? schema : JSON.stringify(schema, null, 2);
+  const prompt = [
+    'Extract structured information from the text below.',
+    'Return ONLY a valid JSON object matching this schema. No explanation, no markdown fences.',
+    '',
+    'Schema:',
+    schemaStr,
+    '',
+    'Text:',
+    String(text),
+  ].join('\n');
+
+  const raw = await ask(prompt, { temperature: 0 });
+  const cleaned = raw.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const m = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    if (m) { try { return JSON.parse(m[0]); } catch {} }
+    throw new Error(`ai.extract: could not parse JSON from response: ${raw.slice(0, 200)}`);
+  }
+}
+
+/**
+ * Classify text into one of the provided labels.
+ * Returns the matching label string.
+ *
+ * @param {string} text  The text to classify
+ * @param {string[]} labels  Array of possible category names
+ * @returns {Promise<string>}
+ *
+ * @example
+ *   category = ai.classify("I love this product!", ["positive", "negative", "neutral"])
+ *   print category   # positive
+ */
+export async function classify(text, labels) {
+  const list = Array.isArray(labels) ? labels : String(labels).split(',').map((s) => s.trim());
+  const prompt = [
+    `Classify the following text into exactly one of these categories: ${list.join(', ')}`,
+    'Respond with only the category name, nothing else.',
+    '',
+    'Text:',
+    String(text),
+  ].join('\n');
+
+  const raw = await ask(prompt, { temperature: 0 });
+  const trimmed = raw.trim();
+  const match = list.find((l) => l.toLowerCase() === trimmed.toLowerCase());
+  return match ?? trimmed;
+}
+
 // --- helpers ---
 
 function offlineStub(messages) {
