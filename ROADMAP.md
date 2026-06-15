@@ -1,6 +1,6 @@
 # Future — Roadmap
 
-**Version:** 0.5.2 · **Last updated:** 2026-06-14
+**Version:** 0.5.3 · **Last updated:** 2026-06-15
 
 Status legend: ✅ Done · 🔄 In progress · 📋 Planned · 💡 Idea
 

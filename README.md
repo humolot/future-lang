@@ -35,6 +35,38 @@ npx future run hello.future
 
 ---
 
+## Why Future?
+
+The same AI query — in Future and in JavaScript:
+
+**Future**
+```future
+answer = ai.ask("What is the capital of Portugal?")
+print answer
+```
+
+**JavaScript (equivalent)**
+```javascript
+import OpenAI from "openai"
+
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+const response = await client.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: "What is the capital of Portugal?" }],
+})
+console.log(response.choices[0].message.content)
+```
+
+| | Lines |
+|---|---|
+| Future | **2** |
+| JavaScript | **9** |
+
+Future isn't hiding magic — both programs do exactly the same thing. Future just makes async, API keys, and response parsing invisible so you focus on the logic.
+
+---
+
 ## Language features
 
 ### Variables and types
@@ -581,9 +613,43 @@ Or search **Future Lang** in the Extensions panel (`Ctrl+Shift+X`).
 
 ---
 
+## Examples
+
+Ready-to-run programs in the [`examples/`](examples/) folder:
+
+| File | What it shows |
+|------|---------------|
+| [`hello.future`](examples/hello.future) | Variables, string interpolation, `ai.ask` |
+| [`api-server.future`](examples/api-server.future) | REST API with `server.*` and `db.*` |
+| [`ai-server.future`](examples/ai-server.future) | AI-powered REST API with Venice AI |
+| [`assistant.future`](examples/assistant.future) | Multi-turn AI chat |
+| [`ai-memory-chat.future`](examples/ai-memory-chat.future) | Chat with persistent memory |
+| [`smarthome.future`](examples/smarthome.future) | IoT automation with MQTT and scheduling |
+| [`crypto-tracker.future`](examples/crypto-tracker.future) | Polling HTTP API every 30 minutes |
+| [`hacker-news.future`](examples/hacker-news.future) | Fetch and display live HN top stories |
+| [`weather-now.future`](examples/weather-now.future) | Real-time weather via HTTP |
+| [`dashboard.future`](examples/dashboard.future) | HTTP server with dynamic HTML |
+| [`pokemon-ai.future`](examples/pokemon-ai.future) | Combining REST API + AI commentary |
+
+Run any example:
+
+```bash
+npx future run examples/hello.future
+npx future run examples/api-server.future
+```
+
+Or browse and run them interactively:
+
+```bash
+future demo
+```
+
+---
+
 ## Documentation
 
 - [ARCHITECTURE.md](https://github.com/humolot/future-lang/blob/main/ARCHITECTURE.md) — compiler pipeline, folder structure, AST node types
 - [ROADMAP.md](https://github.com/humolot/future-lang/blob/main/ROADMAP.md) — feature status and priorities
 - [MIGRATION.md](https://github.com/humolot/future-lang/blob/main/MIGRATION.md) — changelog, what changed between versions
+- [FUTURE_FOR_LLMS.md](https://github.com/humolot/future-lang/blob/main/FUTURE_FOR_LLMS.md) — full grammar + API reference for AI code assistants
 - [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=humolot.future-lang-vscode) — Marketplace page

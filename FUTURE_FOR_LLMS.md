@@ -80,6 +80,61 @@ args        = (expression ("," expression)*)?
 
 ---
 
+## Operators
+
+### Arithmetic
+| Operator | Meaning        | Example          |
+|----------|----------------|------------------|
+| `+`      | Addition       | `x = 1 + 2`      |
+| `-`      | Subtraction    | `x = 5 - 3`      |
+| `*`      | Multiplication | `x = 4 * 2`      |
+| `/`      | Division       | `x = 10 / 4`     |
+| `%`      | Modulo         | `x = 10 % 3`     |
+
+### Comparison
+| Operator | Meaning               | Example       |
+|----------|-----------------------|---------------|
+| `==`     | Equal                 | `x == 5`      |
+| `!=`     | Not equal             | `x != 5`      |
+| `>`      | Greater than          | `x > 5`       |
+| `<`      | Less than             | `x < 5`       |
+| `>=`     | Greater than or equal | `x >= 5`      |
+| `<=`     | Less than or equal    | `x <= 5`      |
+
+### Logical
+| Operator | Meaning | Example                  |
+|----------|---------|--------------------------|
+| `and`    | AND     | `x > 0 and x < 10`      |
+| `or`     | OR      | `x == 0 or x == 1`      |
+| `not`    | NOT     | `not active`             |
+
+**Never use** `&&`, `||`, `!` — they are JavaScript operators and will cause a parse error.
+
+---
+
+## Operator precedence
+
+Higher rows bind tighter (evaluated first).
+
+| Precedence | Operators          |
+|------------|--------------------|
+| Highest    | `*`  `/`  `%`      |
+|            | `+`  `-`           |
+|            | `>`  `<`  `>=`  `<=`  `==`  `!=` |
+|            | `not`              |
+|            | `and`              |
+| Lowest     | `or`               |
+
+```
+print 1 + 2 * 3      # 7  — multiplication first
+print (1 + 2) * 3    # 9  — parentheses override
+print not true or true  # true — not binds tighter than or
+```
+
+Use parentheses whenever precedence is ambiguous to make intent clear.
+
+---
+
 ## Every construct with example
 
 ### Variables
@@ -152,6 +207,38 @@ scores = [85, 92, 78]
 print user.name
 print scores.length
 print scores[0]       # index access — 85
+```
+
+### Nested objects
+```
+user = {
+    name: "Alice"
+    profile: {
+        city: "Lisbon"
+        age: 30
+    }
+}
+
+print user.name           # Alice
+print user.profile.city   # Lisbon
+print user.profile.age    # 30
+```
+
+### Arrays of objects
+```
+users = [
+    { name: "Alice"  role: "admin" }
+    { name: "Bob"    role: "user" }
+    { name: "Carlos" role: "user" }
+]
+
+for user in users
+    print "{user.name} is a {user.role}"
+end
+
+# Access by index
+print users[0].name   # Alice
+print users[1].role   # user
 ```
 
 ### String interpolation
@@ -469,4 +556,56 @@ name = formatName("Alice")
 import { formatName } from "./utils.js";
 let name;
 name = formatName("Alice");
+```
+
+---
+
+## Generation Rules
+
+Rules for LLMs generating Future code. Follow these exactly — violations produce invalid programs.
+
+### Never generate
+- Curly braces `{}` as block delimiters — blocks use `end`, not `{}`
+- Semicolons `;` — not part of the language
+- `async` or `await` — the compiler handles async automatically
+- `let`, `const`, or `var` — variables are declared by assignment only
+- `&&`, `||`, `!` — use `and`, `or`, `not` instead
+- `x++` or `x += 1` — use `x = x + 1` instead
+- `import` statements — use `use "./file.future"` instead
+- `// comments` — use `#` instead
+- `function f() {}` with braces — use `function f()` + body + `end`
+- `elif` — use `else if` instead
+
+### Always do
+- Close every block (`if`, `for`, `while`, `function`, `try`, `agent`, `every`, `on`, `stream`) with `end`
+- Use `and` / `or` / `not` for logical operators
+- Use `{name}` string interpolation instead of concatenation where possible
+- Use `#` for comments
+- Use `null` or `none` (both valid) for null values
+
+### Async is invisible
+Never add `async`/`await`. Every capability call (`ai.ask`, `http.get`, `db.query`, etc.) is automatically awaited by the compiler. Just write the call directly:
+```
+# Correct
+answer = ai.ask("Hello?")
+data = http.get("https://api.example.com")
+
+# Wrong — do not write this
+answer = await ai.ask("Hello?")
+```
+
+### String interpolation is preferred
+```
+# Preferred
+print "Hello, {name}! You are {age} years old."
+
+# Avoid unless necessary
+print "Hello, " + name + "! You are " + age + " years old."
+```
+
+### Object commas are optional
+```
+# Both are valid Future
+user = { name: "Alice"  age: 30 }
+user = { name: "Alice", age: 30 }
 ```

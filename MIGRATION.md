@@ -4,7 +4,30 @@ All releases are **additive only**. No existing Future program has ever required
 
 ---
 
-## v0.5.1 → v0.5.2 (current — `db.connect()` with PostgreSQL and MySQL)
+## v0.5.2 → v0.5.3 (current — documentation and LLM reference improvements)
+
+**No breaking changes. No new runtime code.**
+
+### `FUTURE_FOR_LLMS.md` — expanded reference for AI code assistants
+
+The LLM reference file now includes:
+
+- **Operators table** — arithmetic (`+ - * / %`), comparison (`== != > < >= <=`), logical (`and or not`) with examples
+- **Operator precedence** — explicit table showing binding order from tightest (`*`) to loosest (`or`), with examples
+- **Nested objects** — example showing multi-level property access (`user.profile.city`)
+- **Arrays of objects** — example showing `[{ name: "Alice" }, ...]` with `for` iteration and index access
+- **Generation Rules** — prescriptive rules for LLMs generating Future code: what to never generate (braces, semicolons, `async`, `let`/`const`/`var`, JS logical operators), what to always do, and how async works from the LLM's perspective
+
+These additions make Future significantly easier to generate correctly with any AI code assistant (GitHub Copilot, Claude, ChatGPT, Cursor, etc.).
+
+### `README.md` — Why Future? and Examples sections
+
+- **Why Future?** — side-by-side code comparison (Future 2 lines vs JavaScript 9 lines) showing the same AI query in both languages, explaining what Future makes invisible without hiding magic
+- **Examples** — table of all 11 programs in `examples/` with descriptions and run instructions, plus a link to `FUTURE_FOR_LLMS.md` in the Documentation section
+
+---
+
+## v0.5.1 → v0.5.2 (`db.connect()` with PostgreSQL and MySQL)
 
 **No breaking changes.** `db.open()` still works as before.
 
