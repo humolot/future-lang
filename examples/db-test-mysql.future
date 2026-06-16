@@ -1,0 +1,30 @@
+# Connection test — MySQL (XAMPP)
+# Requires: npm install mysql2
+#
+# In XAMPP: open the control panel and start the "MySQL" module.
+# By default XAMPP exposes MySQL on localhost:3306, user "root" with no password.
+# Create the database before running (phpMyAdmin or command line):
+#   CREATE DATABASE test_future;
+#
+#   future run examples/db-test-mysql.future
+
+try
+  db.connect("mysql://root:@localhost:3306/test_future")
+  print "Connected to MySQL (XAMPP) successfully."
+
+  db.exec("CREATE TABLE IF NOT EXISTS ping (id INT AUTO_INCREMENT PRIMARY KEY, message VARCHAR(255), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+
+  result = db.insert("ping", { message: "hello mysql" })
+  print "Row inserted, id:"
+  print result.id
+
+  row = db.get("SELECT * FROM ping WHERE id = ?", [result.id])
+  print "Row read back:"
+  print row
+
+  db.close()
+  print "Connection closed."
+catch err
+  print "Failed to connect to MySQL:"
+  print err
+end

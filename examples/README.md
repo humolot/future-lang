@@ -122,6 +122,29 @@ future run examples/api-server.future
 
 ---
 
+### `db-test-sqlite.future` — SQLite connection test
+Connects to a local SQLite file, creates a table, inserts a row, and reads it back.
+Demonstrates: `db.connect`, `db.exec`, `db.insert`, `db.get`, `try/catch`.
+
+```bash
+npm install better-sqlite3
+future run examples/db-test-sqlite.future
+```
+
+---
+
+### `db-test-mysql.future` — MySQL connection test (XAMPP)
+Connects to a local MySQL server (e.g. XAMPP), creates a table, inserts a row, and reads it back.
+
+```bash
+npm install mysql2
+# Start MySQL in the XAMPP control panel, then create the database:
+#   CREATE DATABASE test_future;
+future run examples/db-test-mysql.future
+```
+
+---
+
 ## Other examples
 
 | File | Description |

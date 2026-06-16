@@ -1,0 +1,25 @@
+# Connection test — SQLite
+# Requires: npm install better-sqlite3
+#
+#   future run examples/db-test-sqlite.future
+
+try
+  db.connect("./test-sqlite.db")
+  print "Connected to SQLite successfully."
+
+  db.exec("CREATE TABLE IF NOT EXISTS ping (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)")
+
+  result = db.insert("ping", { message: "hello sqlite" })
+  print "Row inserted, id:"
+  print result.id
+
+  row = db.get("SELECT * FROM ping WHERE id = ?", [result.id])
+  print "Row read back:"
+  print row
+
+  db.close()
+  print "Connection closed."
+catch err
+  print "Failed to connect to SQLite:"
+  print err
+end
