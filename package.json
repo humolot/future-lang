@@ -1,6 +1,6 @@
 {
   "name": "future-lang",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "description": "Future — a small programming language that transpiles to JavaScript, with a capability runtime (HTTP/AI/MQTT/TTS).",
   "type": "module",
   "bin": {
@@ -18,6 +18,18 @@
   "engines": {
     "node": ">=22"
   },
+  "files": [
+    "src",
+    "runtime",
+    "examples",
+    "future-browser.js",
+    "future-playground.html",
+    "README.md",
+    "ARCHITECTURE.md",
+    "MIGRATION.md",
+    "ROADMAP.md",
+    "FUTURE_FOR_LLMS.md"
+  ],
   "optionalDependencies": {
     "better-sqlite3": "^11.10.0",
     "mqtt": "^5.0.0",
